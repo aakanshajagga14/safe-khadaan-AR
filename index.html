@@ -15,22 +15,23 @@
       <a-entity light="type: ambient; color: #888"></a-entity>
 
       <!-- Ground -->
-      <a-plane rotation="-90 0 0" width="100" height="100" color="#444"></a-plane>
+      <a-plane rotation="-90 0 0" width="200" height="200" color="#444"></a-plane>
 
       <!-- Mine Model -->
       <a-entity 
         id="mineModel"
         gltf-model="open_pit_mine (1).glb" 
         position="0 0 -10" 
-        scale="0.02 0.02 0.02"
+        scale="2 2 2"
         rotation="0 0 0">
       </a-entity>
 
       <!-- Camera with orbit controls -->
       <a-entity 
+        id="rig"
         camera
-        position="0 5 15"
-        orbit-controls="autoRotate: false; target: #mineModel; enableDamping: true; minDistance: 2; maxDistance: 50;">
+        position="0 5 30"
+        orbit-controls="autoRotate: false; target: #mineModel; enableDamping: true; minDistance: 10; maxDistance: 200;">
       </a-entity>
 
     </a-scene>
