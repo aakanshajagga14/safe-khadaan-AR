@@ -30,6 +30,7 @@
         left: 40px;
         width: 120px;
         height: 120px;
+        touch-action: none; /* important for mobile */
       }
     </style>
   </head>
@@ -37,8 +38,11 @@
     <a-scene background="color: #101010">
 
       <!-- LIGHTS -->
-      <a-entity light="type: directional; intensity: 1" position="2 4 5"></a-entity>
-      <a-entity light="type: ambient; intensity: 0.7"></a-entity>
+      <a-entity light="type: directional; intensity: 1; castShadow: true" position="2 4 5"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.8"></a-entity>
+
+      <!-- Optional sky to prevent black pixels -->
+      <a-sky color="#101010"></a-sky>
 
       <!-- OPEN PIT MINE MODEL -->
       <a-entity id="mine"
@@ -50,7 +54,7 @@
 
       <!-- CAMERA RIG -->
       <a-entity id="rig" position="0 1.6 3">
-        <a-camera look-controls="enabled: true"></a-camera>
+        <a-camera wasd-controls-enabled="false" look-controls="enabled: true"></a-camera>
       </a-entity>
     </a-scene>
 
@@ -68,23 +72,24 @@
     </div>
 
     <script>
-      // Setup joystick
       const rig = document.querySelector("#rig");
       let moveX = 0, moveZ = 0;
 
+      // Setup joystick
       const joystick = nipplejs.create({
         zone: document.getElementById("joystick"),
         mode: "static",
-        position: { left: "60px", bottom: "60px" },
+        position: { left: 60, bottom: 60 },
         color: "lime",
         size: 120
       });
 
       joystick.on("move", (evt, data) => {
-        const angle = data.angle ? data.angle.radian : 0;
-        const force = data.force ? data.force : 0;
-        moveX = Math.cos(angle) * force * 0.02;
-        moveZ = Math.sin(angle) * force * 0.02;
+        if (!data.angle || !data.force) return;
+        const angle = data.angle.radian;
+        const force = data.force;
+        moveX = Math.sin(angle) * force * 0.03;  // A-Frame X axis
+        moveZ = -Math.cos(angle) * force * 0.03; // negative Z is forward
       });
 
       joystick.on("end", () => { moveX = 0; moveZ = 0; });
@@ -92,9 +97,11 @@
       // Smooth movement
       function tick() {
         let pos = rig.getAttribute("position");
-        pos.x += moveX;
-        pos.z += moveZ;
-        rig.setAttribute("position", pos);
+        rig.setAttribute("position", {
+          x: pos.x + moveX,
+          y: pos.y,
+          z: pos.z + moveZ
+        });
         requestAnimationFrame(tick);
       }
       tick();
