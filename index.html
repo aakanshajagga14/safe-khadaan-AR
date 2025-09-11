@@ -1,103 +1,272 @@
-<html>
-  <head>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
-    <script src="https://unpkg.com/aframe-environment-component/dist/aframe-environment-component.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
-    <style>
-      body { margin: 0; overflow: hidden; font-family: sans-serif; }
-      #map { position: fixed; top: 20px; right: 20px; width: 220px; padding: 15px; border-radius: 16px;
-             background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px); color: #fff; box-shadow: 0 8px 25px rgba(0,0,0,0.5);}
-      #map h3 { margin: 0 0 10px; font-size: 16px; text-align: center; }
-      .legend { font-size: 14px; margin-top: 10px; line-height: 1.6em; }
-      .marker { font-weight: bold; color: #39ff14; cursor: pointer; text-shadow: 0 0 8px #39ff14; }
-      .marker:hover { color: #fff; text-shadow: 0 0 12px #39ff14, 0 0 20px #39ff14; }
-      #joystick { position: fixed; bottom: 40px; left: 40px; width: 150px; height: 150px; touch-action: none;
-                  border-radius: 50%; background: rgba(0, 255, 100, 0.1); box-shadow: 0 0 25px #39ff14;}
-    </style>
-  </head>
-  <body>
-    <a-scene background="color: #101010" renderer="colorManagement: true; physicallyCorrectLights: true">
-      
-      <!-- Add realistic environment lighting -->
-      <a-entity environment="preset: forest; lighting: point; ground: none; playArea: 1.5"></a-entity>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+  <title>Mine VR — debug build</title>
 
-      <!-- LIGHTS -->
-      <a-entity light="type: directional; intensity: 1" position="2 4 5"></a-entity>
-      <a-entity light="type: ambient; intensity: 1"></a-entity>
+  <!-- A-Frame + environment + nipplejs -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://unpkg.com/aframe-environment-component/dist/aframe-environment-component.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
 
-      <!-- OPEN PIT MINE MODEL -->
-      <a-entity id="mine"
-        gltf-model="mine_ar_map.glb"
-        position="0 0 -6"
-        scale="6 6 6"
-        rotation="0 20 0"
-        material="color: #ccc; metalness: 0.1; roughness: 0.8">
-      </a-entity>
+  <style>
+    html,body{height:100%;margin:0;background:#0f0f10;color:#fff;font-family:Inter,system-ui,Arial}
+    a-scene{height:100vh;width:100vw;display:block}
 
-      <!-- CAMERA RIG -->
-      <a-entity id="rig" position="0 1.6 3">
-        <a-camera wasd-controls-enabled="false" look-controls="enabled: true"></a-camera>
-      </a-entity>
-    </a-scene>
+    /* map UI */
+    #map{
+      position:fixed; right:18px; top:18px; width:230px;
+      padding:14px; border-radius:14px;
+      background:rgba(255,255,255,0.08); backdrop-filter: blur(8px);
+      box-shadow:0 10px 30px rgba(0,0,0,0.6); z-index:1200;
+      font-size:14px;
+    }
+    #map h3{margin:0 0 8px;font-size:15px;text-align:center}
+    .legend{line-height:1.6}
+    .marker{
+      font-weight:700; color:#39ff14; cursor:pointer; user-select:none;
+      text-shadow:0 0 8px rgba(57,255,20,0.35);
+    }
 
-    <!-- Joystick container -->
-    <div id="joystick"></div>
+    /* joystick */
+    #joystick{
+      position:fixed; left:20px; bottom:28px; width:150px; height:150px;
+      border-radius:50%; touch-action:none; z-index:1200;
+      display:block; background:rgba(57,255,20,0.06);
+      box-shadow:0 0 28px rgba(57,255,20,0.14), inset 0 2px 8px rgba(0,0,0,0.2);
+    }
 
-    <!-- Map overlay -->
-    <div id="map">
-      <h3>Mine Map</h3>
-      <div class="legend">
-        <span class="marker" onclick="teleportTo(1)">1</span> Loading Area<br>
-        <span class="marker" onclick="teleportTo(2)">2</span> Excavation Zone<br>
-        <span class="marker" onclick="teleportTo(3)">3</span> Control Station
-      </div>
+    /* status / debug panel */
+    #status {
+      position:fixed; left:18px; top:18px; width:320px; max-height:40vh; overflow:auto;
+      padding:10px; border-radius:10px; background:rgba(0,0,0,0.45); z-index:1300;
+      font-size:12px; line-height:1.4;
+    }
+    .status-line{margin:6px 0;font-family:monospace; font-size:12px}
+    .ok{color:#7ef9a6}
+    .warn{color:#ffd36b}
+    .err{color:#ff8b8b}
+  </style>
+</head>
+<body>
+
+  <!-- A-FRAME SCENE -->
+  <a-scene
+    renderer="antialias: true; physicallyCorrectLights: true; colorManagement: true"
+    vr-mode-ui="enabled: true"
+    embedded>
+
+    <!-- preload the model (replace src if needed) -->
+    <a-assets timeout="60000">
+      <a-asset-item id="mineModel" src="mine_ar_map.glb"></a-asset-item>
+    </a-assets>
+
+    <!-- environment for nicer lighting -->
+    <a-entity environment="preset: hills; shadow: soft; lighting: gentle; fog: none; playArea: 3"></a-entity>
+
+    <!-- lights to reduce "black" areas -->
+    <a-entity light="type: hemisphere; intensity: 0.9; groundColor: #444; color: #ffffff" position="0 1 0"></a-entity>
+    <a-entity light="type: directional; intensity: 0.9" position="2 6 4"></a-entity>
+    <a-entity light="type: ambient; intensity: 0.5"></a-entity>
+
+    <!-- optional subtle sky so PBR has some ambient -->
+    <a-sky color="#0f0f10"></a-sky>
+
+    <!-- GLTF model entity (uses preloaded asset) -->
+    <a-entity id="mine"
+              gltf-model="#mineModel"
+              position="0 0 -6"
+              rotation="0 20 0"
+              scale="6 6 6"
+              visible="true">
+    </a-entity>
+
+    <!-- camera rig we will move -->
+    <a-entity id="rig" position="0 1.6 3">
+      <a-camera wasd-controls-enabled="false" look-controls="enabled: true"></a-camera>
+    </a-entity>
+
+  </a-scene>
+
+  <!-- joystick and map UI -->
+  <div id="joystick" aria-hidden="true"></div>
+
+  <div id="map" aria-hidden="true">
+    <h3>Mine Map</h3>
+    <div class="legend">
+      <span class="marker" data-zone="1">1</span> Loading Area<br>
+      <span class="marker" data-zone="2">2</span> Excavation Zone<br>
+      <span class="marker" data-zone="3">3</span> Control Station
     </div>
+  </div>
 
-    <script>
-      const rig = document.querySelector("#rig");
-      let moveX = 0, moveZ = 0;
+  <!-- status / debug (useful on mobile) -->
+  <div id="status" aria-hidden="true">
+    <div class="status-line ok">Initializing...</div>
+  </div>
 
-      // Setup joystick
-      const joystick = nipplejs.create({
-        zone: document.getElementById("joystick"),
-        mode: "static",
-        position: { left: 75, bottom: 75 },
-        color: "lime",
-        size: 150
-      });
+<script>
+(function(){
+  const statusEl = document.getElementById('status');
+  const setStatus = (text, cls='ok') => {
+    const line = document.createElement('div');
+    line.className = 'status-line ' + cls;
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+    statusEl.prepend(line);
+    // keep length reasonable
+    while(statusEl.children.length > 20) statusEl.removeChild(statusEl.lastChild);
+    console[cls === 'err' ? 'error' : cls === 'warn' ? 'warn' : 'log'](text);
+  };
 
-      joystick.on("move", (evt, data) => {
-        if (!data.angle || !data.force) return;
-        const angle = data.angle.radian;
-        const force = data.force;
-        moveX = Math.sin(angle) * force * 0.03;
-        moveZ = -Math.cos(angle) * force * 0.03;
-      });
+  const rig = document.querySelector('#rig');
+  const mineEl = document.querySelector('#mine');
+  let modelLoaded = false;
 
-      joystick.on("end", () => { moveX = 0; moveZ = 0; });
+  // model-loaded handler
+  mineEl.addEventListener('model-loaded', (evt) => {
+    modelLoaded = true;
+    setStatus('Model loaded successfully.', 'ok');
 
-      // Smooth movement
-      function tick() {
-        let pos = rig.getAttribute("position");
-        rig.setAttribute("position", {
-          x: pos.x + moveX,
-          y: pos.y,
-          z: pos.z + moveZ
+    // post-process: make faces double-sided & refresh materials to avoid dark faces
+    try {
+      const model = evt.detail && evt.detail.model;
+      if (model) {
+        model.traverse(node => {
+          if (node.isMesh) {
+            if (node.material) {
+              node.material.side = THREE.DoubleSide;
+              node.material.needsUpdate = true;
+            }
+            node.castShadow = true;
+            node.receiveShadow = true;
+          }
         });
-        requestAnimationFrame(tick);
+        setStatus('Applied material fixes (DoubleSide) to meshes.', 'ok');
       }
-      tick();
+    } catch (e) {
+      setStatus('Post-process on model failed: ' + e.message, 'warn');
+    }
+  });
 
-      // Teleport to map markers
-      function teleportTo(zone) {
-        let positions = {
-          1: { x: 2, y: 1.6, z: -2 },
-          2: { x: -3, y: 1.6, z: -6 },
-          3: { x: 1, y: 1.6, z: -10 }
-        };
-        rig.setAttribute("position", positions[zone]);
-      }
-    </script>
-  </body>
+  // if model hasn't loaded within X seconds, show placeholder + helpful message
+  setStatus('Waiting for model to load (up to 20s)...', 'ok');
+  const checkTimeout = setTimeout(() => {
+    if (!modelLoaded) {
+      setStatus('Model did not load within 20s. Creating placeholder and showing debug tips.', 'err');
+      // create a visible placeholder so scene isn't empty
+      const scene = document.querySelector('a-scene');
+      const box = document.createElement('a-box');
+      box.setAttribute('position', '0 0.8 -2');
+      box.setAttribute('depth', '3');
+      box.setAttribute('height', '1.6');
+      box.setAttribute('width', '3');
+      box.setAttribute('color', '#777');
+      scene.appendChild(box);
+
+      setStatus('Placeholder box added. Check path/CORS for mine_ar_map.glb (or open dev console).', 'warn');
+    }
+  }, 20000);
+
+  // JOYSTICK (nipplejs) setup
+  const joystickZone = document.getElementById('joystick');
+  // compute absolute center for static nipple
+  const rect = joystickZone.getBoundingClientRect();
+  const absLeft = rect.left + rect.width/2 + window.scrollX;
+  const absTop  = rect.top  + rect.height/2 + window.scrollY;
+
+  if (!window.nipplejs) {
+    setStatus('nipplejs library not available!', 'err');
+  } else {
+    const joystick = nipplejs.create({
+      zone: joystickZone,
+      mode: 'static',
+      position: { left: absLeft, top: absTop },
+      color: 'lime',
+      size: 150,
+      restOpacity: 0.6
+    });
+
+    let moveX = 0, moveZ = 0;
+    let active = false;
+
+    joystick.on('start', () => { active = true; setStatus('Joystick started', 'ok'); });
+    joystick.on('move', (evt, data) => {
+      if (!data) return;
+      const angle = (data.angle && data.angle.radian) ? data.angle.radian : 0;
+      const force = data.force || 0;
+      // clamp force and scale for comfortable speed
+      const scaled = Math.min(force, 3);
+      moveX = Math.sin(angle) * scaled * 0.035;
+      moveZ = -Math.cos(angle) * scaled * 0.035;
+      setStatus(`Joystick move — x:${moveX.toFixed(3)}, z:${moveZ.toFixed(3)}`, 'ok');
+    });
+    joystick.on('end', () => { moveX = 0; moveZ = 0; active = false; setStatus('Joystick released', 'ok'); });
+
+    // movement tick (smooth)
+    function tick(){
+      try {
+        const pos = rig.getAttribute('position');
+        // ensure numbers
+        const nx = (pos.x || 0) + moveX;
+        const ny = pos.y || 1.6;
+        const nz = (pos.z || 0) + moveZ;
+        rig.setAttribute('position', { x: nx, y: ny, z: nz });
+      } catch(e){ /* ignore */ }
+      requestAnimationFrame(tick);
+    }
+    tick();
+    setStatus('Joystick set up (touch-ready).', 'ok');
+  }
+
+  // MAP MARKERS — pointerdown for best cross-device support
+  document.querySelectorAll('.marker').forEach(el => {
+    el.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      const z = parseInt(el.getAttribute('data-zone') || el.dataset.zone, 10);
+      setStatus('Marker tapped: zone ' + z, 'ok');
+      teleportTo(z, true);
+    }, {passive:false});
+  });
+
+  // teleport with optional smooth animation
+  function teleportTo(zone, smooth){
+    const positions = {
+      1: { x: 2, y: 1.6, z: -2 },
+      2: { x: -3, y: 1.6, z: -6 },
+      3: { x: 1, y: 1.6, z: -10 }
+    };
+    const target = positions[zone];
+    if (!target) {
+      setStatus('Unknown zone: ' + zone, 'warn'); return;
+    }
+    if (!smooth) { rig.setAttribute('position', target); return; }
+
+    const start = rig.getAttribute('position');
+    const duration = 600;
+    let startTime = null;
+    function animate(now){
+      if (!startTime) startTime = now;
+      const t = Math.min(1, (now - startTime) / duration);
+      // easeInOutQuad
+      const eased = t < 0.5 ? 2*t*t : -1 + (4-2*t)*t;
+      const x = start.x + (target.x - start.x) * eased;
+      const y = start.y + (target.y - start.y) * eased;
+      const z = start.z + (target.z - start.z) * eased;
+      rig.setAttribute('position', { x, y, z });
+      if (t < 1) requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  }
+
+  // helpful tips for developer/user
+  setStatus('Tips: If model stays black or does not load, check file path, run via http(s) server (not file://), and inspect console for CORS errors.', 'warn');
+
+  // expose for debug (optional)
+  window.__mineDebug = { teleportTo, setStatus };
+
+})();
+</script>
+
+</body>
 </html>
