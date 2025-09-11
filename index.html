@@ -1,35 +1,45 @@
-<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
-    <title>Open Pit Mine VR</title>
-    <meta name="description" content="3D Open Pit Mine VR Viewer">
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-joystick-component@1.1.0/dist/aframe-joystick.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
   </head>
   <body>
-    <a-scene vr-mode-ui="enabled: true" renderer="antialias: true; precision: mediump">
-      
-      <!-- Lights (simplified for mobile) -->
-      <a-entity light="type: ambient; color: #bbb; intensity: 1"></a-entity>
-      <a-entity light="type: directional; color: #fff; intensity: 0.8" position="2 4 5"></a-entity>
+    <a-scene background="color: black">
 
-      <!-- Ground (smaller) -->
-      <a-plane rotation="-90 0 0" width="200" height="200" color="#333"></a-plane>
+      <!-- LIGHTING -->
+      <a-entity light="type: directional; intensity: 1" position="1 2 2"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.5"></a-entity>
 
-      <!-- Mine Model -->
-      <a-entity 
-        id="mineModel"
-        gltf-model="mine-optimized.glb" 
-        position="-15 0 -10"   <!-- moved left -->
-        scale="5 5 5"
-        rotation="0 0 0">
-</a-entity>
-
-      <!-- Camera Rig with joystick -->
-      <a-entity id="rig" position="0 2 10" joystick="mode: movement; speed: 0.4">
-        <a-entity camera look-controls></a-entity>
+      <!-- CENTERED MINE MODEL -->
+      <a-entity id="mine"
+        gltf-model="open_pit_mine (1).glb"
+        position="0 0 -8"
+        scale="6 6 6"
+        rotation="0 30 0">
       </a-entity>
+
+      <!-- CAMERA + CONTROLS -->
+      <a-entity id="rig" position="0 1.6 0">
+        <a-camera></a-camera>
+      </a-entity>
+
+      <!-- SIMPLE JOYSTICK CONTROL -->
+      <script>
+        AFRAME.registerComponent("joystick-controls", {
+          init: function () {
+            let rig = document.querySelector("#rig");
+            window.addEventListener("keydown", (e) => {
+              let pos = rig.getAttribute("position");
+              if (e.key === "ArrowUp") pos.z -= 0.3;   // forward
+              if (e.key === "ArrowDown") pos.z += 0.3; // back
+              if (e.key === "ArrowLeft") pos.x -= 0.3; // left
+              if (e.key === "ArrowRight") pos.x += 0.3; // right
+              rig.setAttribute("position", pos);
+            });
+          }
+        });
+        document.querySelector("#rig").setAttribute("joystick-controls", "");
+      </script>
 
     </a-scene>
   </body>
