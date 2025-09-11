@@ -2,64 +2,37 @@
   <head>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component/dist/aframe-environment-component.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
     <style>
       body { margin: 0; overflow: hidden; font-family: sans-serif; }
-
-      /* Glassmorphic Map UI */
-      #map {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        width: 220px;
-        padding: 15px;
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.12);
-        backdrop-filter: blur(10px);
-        color: #fff;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-      }
+      #map { position: fixed; top: 20px; right: 20px; width: 220px; padding: 15px; border-radius: 16px;
+             background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px); color: #fff; box-shadow: 0 8px 25px rgba(0,0,0,0.5);}
       #map h3 { margin: 0 0 10px; font-size: 16px; text-align: center; }
       .legend { font-size: 14px; margin-top: 10px; line-height: 1.6em; }
-      .marker {
-        font-weight: bold;
-        color: #39ff14; /* neon green */
-        cursor: pointer;
-        text-shadow: 0 0 8px #39ff14;
-      }
-      .marker:hover {
-        color: #fff;
-        text-shadow: 0 0 12px #39ff14, 0 0 20px #39ff14;
-      }
-
-      /* Joystick */
-      #joystick {
-        position: fixed;
-        bottom: 40px;
-        left: 40px;
-        width: 150px;
-        height: 150px;
-        touch-action: none;
-        border-radius: 50%;
-        background: rgba(0, 255, 100, 0.1);
-        box-shadow: 0 0 25px #39ff14;
-      }
+      .marker { font-weight: bold; color: #39ff14; cursor: pointer; text-shadow: 0 0 8px #39ff14; }
+      .marker:hover { color: #fff; text-shadow: 0 0 12px #39ff14, 0 0 20px #39ff14; }
+      #joystick { position: fixed; bottom: 40px; left: 40px; width: 150px; height: 150px; touch-action: none;
+                  border-radius: 50%; background: rgba(0, 255, 100, 0.1); box-shadow: 0 0 25px #39ff14;}
     </style>
   </head>
   <body>
-    <a-scene background="color: #101010">
+    <a-scene background="color: #101010" renderer="colorManagement: true; physicallyCorrectLights: true">
+      
+      <!-- Add realistic environment lighting -->
+      <a-entity environment="preset: forest; lighting: point; ground: none; playArea: 1.5"></a-entity>
 
       <!-- LIGHTS -->
-      <a-entity light="type: directional; intensity: 1; castShadow: true" position="2 4 5"></a-entity>
-      <a-entity light="type: ambient; intensity: 0.9"></a-entity>
-      <a-sky color="#101010"></a-sky>
+      <a-entity light="type: directional; intensity: 1" position="2 4 5"></a-entity>
+      <a-entity light="type: ambient; intensity: 1"></a-entity>
 
       <!-- OPEN PIT MINE MODEL -->
       <a-entity id="mine"
         gltf-model="mine_ar_map.glb"
         position="0 0 -6"
         scale="6 6 6"
-        rotation="0 20 0">
+        rotation="0 20 0"
+        material="color: #ccc; metalness: 0.1; roughness: 0.8">
       </a-entity>
 
       <!-- CAMERA RIG -->
@@ -119,9 +92,9 @@
       // Teleport to map markers
       function teleportTo(zone) {
         let positions = {
-          1: { x: 2, y: 1.6, z: -2 },  // Loading Area
-          2: { x: -3, y: 1.6, z: -6 }, // Excavation Zone
-          3: { x: 1, y: 1.6, z: -10 }  // Control Station
+          1: { x: 2, y: 1.6, z: -2 },
+          2: { x: -3, y: 1.6, z: -6 },
+          3: { x: 1, y: 1.6, z: -10 }
         };
         rig.setAttribute("position", positions[zone]);
       }
