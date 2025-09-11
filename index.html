@@ -2,45 +2,129 @@
   <head>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <style>
+      body { margin: 0; overflow: hidden; }
+      /* On-screen joystick */
+      #joystick {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        width: 120px;
+        height: 120px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #stick {
+        width: 60px;
+        height: 60px;
+        background: limegreen;
+        border-radius: 50%;
+        box-shadow: 0 0 10px lime;
+        touch-action: none;
+      }
+      /* Map overlay */
+      #map {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 200px;
+        height: 200px;
+        background: rgba(0,0,0,0.6);
+        border-radius: 12px;
+        padding: 10px;
+        color: white;
+        font-family: sans-serif;
+        font-size: 14px;
+      }
+      .marker {
+        background: red;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 50%;
+        font-size: 12px;
+        position: absolute;
+      }
+      .legend {
+        margin-top: 10px;
+      }
+    </style>
   </head>
   <body>
     <a-scene background="color: black">
 
-      <!-- LIGHTING -->
+      <!-- LIGHTS -->
       <a-entity light="type: directional; intensity: 1" position="1 2 2"></a-entity>
       <a-entity light="type: ambient; intensity: 0.5"></a-entity>
 
-      <!-- CENTERED MINE MODEL -->
+      <!-- MINE MODEL -->
       <a-entity id="mine"
-        gltf-model="open_pit_mine (1).glb"
+        gltf-model="mine_ar_map.glb"
         position="0 0 -8"
-        scale="6 6 6"
+        scale="8 8 8"
         rotation="0 30 0">
       </a-entity>
 
-      <!-- CAMERA + CONTROLS -->
+      <!-- CAMERA RIG -->
       <a-entity id="rig" position="0 1.6 0">
         <a-camera></a-camera>
       </a-entity>
-
-      <!-- SIMPLE JOYSTICK CONTROL -->
-      <script>
-        AFRAME.registerComponent("joystick-controls", {
-          init: function () {
-            let rig = document.querySelector("#rig");
-            window.addEventListener("keydown", (e) => {
-              let pos = rig.getAttribute("position");
-              if (e.key === "ArrowUp") pos.z -= 0.3;   // forward
-              if (e.key === "ArrowDown") pos.z += 0.3; // back
-              if (e.key === "ArrowLeft") pos.x -= 0.3; // left
-              if (e.key === "ArrowRight") pos.x += 0.3; // right
-              rig.setAttribute("position", pos);
-            });
-          }
-        });
-        document.querySelector("#rig").setAttribute("joystick-controls", "");
-      </script>
-
     </a-scene>
+
+    <!-- On-screen joystick -->
+    <div id="joystick"><div id="stick"></div></div>
+
+    <!-- Map overlay with markers -->
+    <div id="map">
+      <div style="text-align:center; font-weight:bold;">Mine Map</div>
+      <div id="mapArea" style="position:relative; width:100%; height:120px; background:#333; border-radius:8px;">
+        <div class="marker" style="top:20px; left:50px;">1</div>
+        <div class="marker" style="top:60px; left:120px;">2</div>
+        <div class="marker" style="top:90px; left:80px;">3</div>
+      </div>
+      <div class="legend">
+        <b>Legend:</b><br>
+        1 - Loading Area<br>
+        2 - Excavation Zone<br>
+        3 - Control Station
+      </div>
+    </div>
+
+    <script>
+      // Joystick controls
+      const stick = document.getElementById("stick");
+      const rig = document.querySelector("#rig");
+      let dragging = false;
+
+      stick.addEventListener("touchstart", () => dragging = true);
+      stick.addEventListener("touchend", () => {
+        dragging = false;
+        stick.style.transform = "translate(0,0)";
+      });
+
+      stick.addEventListener("touchmove", (e) => {
+        if (!dragging) return;
+        let touch = e.touches[0];
+        let rect = stick.parentElement.getBoundingClientRect();
+        let dx = touch.clientX - (rect.left + rect.width/2);
+        let dy = touch.clientY - (rect.top + rect.height/2);
+
+        // limit stick movement
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > 40) {
+          dx = dx * 40 / dist;
+          dy = dy * 40 / dist;
+        }
+        stick.style.transform = `translate(${dx}px,${dy}px)`;
+
+        // move rig smoothly
+        let pos = rig.getAttribute("position");
+        pos.x += dx * 0.002;
+        pos.z += dy * 0.002;
+        rig.setAttribute("position", pos);
+      });
+    </script>
   </body>
 </html>
