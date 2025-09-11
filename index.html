@@ -415,9 +415,9 @@
     const joystick = nipplejs.create({
       zone: joystickZone,
       mode: 'static',
-      position: updateJoystickPosition(),
+      position: { left: '50%', top: '50%' }, // Center within the zone
       color: '#39ff14',
-      size: 150,
+      size: 100, // Smaller size for better fit
       restOpacity: 0.7,
       fadeTime: 250
     });
