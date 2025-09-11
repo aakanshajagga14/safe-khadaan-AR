@@ -2,617 +2,188 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
-  <title>Mine VR — Enhanced Build</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>Mine VR - Working Version</title>
 
-  <!-- A-Frame + environment + nipplejs -->
+  <!-- A-Frame + nipplejs -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://unpkg.com/aframe-environment-component/dist/aframe-environment-component.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
 
   <style>
-    html,body{height:100%;margin:0;background:#0f0f10;color:#fff;font-family:Inter,system-ui,Arial}
-    a-scene{height:100vh;width:100vw;display:block}
-
-    /* Enhanced map UI with better glassmorphism */
-    #map{
-      position:fixed; right:18px; top:18px; width:250px;
-      padding:16px; border-radius:16px;
-      background:rgba(255,255,255,0.12); 
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.2);
-      box-shadow:0 12px 40px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2); 
-      z-index:1200;
-      font-size:14px;
-      transition: all 0.3s ease;
-    }
-    #map:hover {
-      background:rgba(255,255,255,0.15);
-      transform: translateY(-2px);
-      box-shadow:0 16px 50px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3);
-    }
-    #map h3{
-      margin:0 0 12px;
-      font-size:16px;
-      text-align:center;
-      font-weight:600;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    }
-    .legend{line-height:1.8}
-    .marker{
-      font-weight:700; 
-      color:#39ff14; 
-      cursor:pointer; 
-      user-select:none;
-      text-shadow:0 0 12px rgba(57,255,20,0.6);
-      transition: all 0.2s ease;
-      padding: 4px 8px;
-      border-radius: 6px;
-      display: inline-block;
-      margin-right: 8px;
-    }
-    .marker:hover, .marker:active {
-      background: rgba(57,255,20,0.2);
-      transform: scale(1.05);
-      text-shadow:0 0 16px rgba(57,255,20,0.8);
-    }
-
-    /* Enhanced joystick with better glow */
-    #joystick{
-      position:fixed; left:20px; bottom:28px; width:160px; height:160px;
-      border-radius:50%; touch-action:none; z-index:1200;
-      display:block; 
-      background:rgba(57,255,20,0.08);
-      border: 2px solid rgba(57,255,20,0.3);
-      box-shadow:0 0 40px rgba(57,255,20,0.2), 
-                 inset 0 2px 12px rgba(0,0,0,0.3),
-                 0 4px 16px rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
-    }
-    #joystick:active {
-      transform: scale(0.95);
-      box-shadow:0 0 50px rgba(57,255,20,0.3), 
-                 inset 0 2px 12px rgba(0,0,0,0.4);
-    }
-
-    /* Enhanced status panel */
-    #status {
-      position:fixed; left:18px; top:18px; width:340px; max-height:35vh; 
-      overflow-y:auto; overflow-x:hidden;
-      padding:12px; border-radius:12px; 
-      background:rgba(0,0,0,0.6); 
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.1);
-      z-index:1300;
-      font-size:12px; line-height:1.5;
-      transition: opacity 0.3s ease;
-    }
-    .status-line{
-      margin:4px 0;
-      font-family:monospace; 
-      font-size:11px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      border-left: 3px solid transparent;
-    }
-    .ok{
-      color:#7ef9a6;
-      border-left-color: #7ef9a6;
-      background: rgba(126,249,166,0.05);
-    }
-    .warn{
-      color:#ffd36b;
-      border-left-color: #ffd36b;
-      background: rgba(255,211,107,0.05);
-    }
-    .err{
-      color:#ff8b8b;
-      border-left-color: #ff8b8b;
-      background: rgba(255,139,139,0.05);
-    }
-
-    /* Loading overlay */
-    #loadingOverlay {
+    body, html { margin: 0; padding: 0; height: 100%; background: #000; }
+    
+    /* Joystick - fixed position */
+    #joystick {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15,15,16,0.9);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      backdrop-filter: blur(10px);
-      transition: opacity 0.5s ease;
-    }
-    .loading-content {
-      text-align: center;
-      color: #39ff14;
-    }
-    .loading-spinner {
-      width: 60px;
-      height: 60px;
-      border: 3px solid rgba(57,255,20,0.3);
-      border-top: 3px solid #39ff14;
+      bottom: 30px;
+      left: 30px;
+      width: 120px;
+      height: 120px;
+      background: rgba(57, 255, 20, 0.1);
+      border: 2px solid rgba(57, 255, 20, 0.5);
       border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 16px;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      z-index: 1000;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 480px) {
-      #map { width: 200px; right: 12px; top: 12px; padding: 12px; }
-      #joystick { width: 140px; height: 140px; left: 15px; bottom: 20px; }
-      #status { width: 280px; left: 12px; top: 12px; }
+    /* Map UI */
+    #map {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 200px;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(57, 255, 20, 0.3);
+      border-radius: 10px;
+      color: white;
+      z-index: 1000;
+    }
+    
+    .marker {
+      color: #39ff14;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 5px;
+      display: inline-block;
+    }
+    
+    .marker:hover {
+      background: rgba(57, 255, 20, 0.2);
     }
 
-    /* VR mode adjustments */
-    .a-enter-vr-button {
-      background: rgba(57,255,20,0.9) !important;
-      border: none !important;
-      border-radius: 8px !important;
-      transition: all 0.3s ease !important;
-    }
-    .a-enter-vr-button:hover {
-      background: rgba(57,255,20,1) !important;
-      transform: scale(1.05) !important;
+    /* Status */
+    #status {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      max-width: 300px;
+      z-index: 1000;
     }
   </style>
 </head>
 <body>
 
-  <!-- Loading overlay -->
-  <div id="loadingOverlay">
-    <div class="loading-content">
-      <div class="loading-spinner"></div>
-      <h3>Loading Mine VR Experience</h3>
-      <p>Preparing 3D model and environment...</p>
-    </div>
-  </div>
-
-  <!-- A-FRAME SCENE -->
-  <a-scene
-    renderer="antialias: true; physicallyCorrectLights: true; colorManagement: true; alpha: false"
-    vr-mode-ui="enabled: true; enterVRButton: #vrButton"
-    embedded
-    loading-screen="enabled: false">
-
-    <!-- Enhanced assets with timeout and error handling -->
-    <a-assets timeout="30000">
-      <a-asset-item id="mineModel" src="mine_ar_map.glb" 
-                    response-type="arraybuffer"
-                    crossorigin="anonymous"></a-asset-item>
-    </a-assets>
-
-    <!-- Enhanced environment with better lighting -->
-    <a-entity environment="preset: hills; 
-                           shadow: true; 
-                           lighting: distant; 
-                           fog: 0.01; 
-                           playArea: 5;
-                           shadowSize: 20"></a-entity>
-
-    <!-- Improved lighting setup -->
-    <a-entity light="type: hemisphere; intensity: 0.8; groundColor: #2a2a2a; color: #ffffff" 
-              position="0 2 0"></a-entity>
-    <a-entity light="type: directional; intensity: 1.2; castShadow: true; shadowMapHeight: 2048; shadowMapWidth: 2048" 
-              position="5 8 3"
-              shadow="type: pcf"></a-entity>
-    <a-entity light="type: ambient; intensity: 0.4"></a-entity>
+  <a-scene embedded style="height: 100vh; width: 100vw;">
     
-    <!-- Additional point lights for mine areas -->
-    <a-entity light="type: point; intensity: 0.6; color: #39ff14; distance: 8" 
-              position="2 2 -2" 
-              animation="property: light.intensity; to: 0.3; dur: 2000; dir: alternate; loop: true"></a-entity>
-    <a-entity light="type: point; intensity: 0.5; color: #ff6b35; distance: 6" 
-              position="-3 2 -6"></a-entity>
+    <!-- Simple mine environment -->
+    <a-sky color="#001122"></a-sky>
+    <a-plane position="0 0 -4" rotation="-90 0 0" width="20" height="20" color="#333" shadow="receive: true"></a-plane>
+    
+    <!-- Lighting -->
+    <a-light type="ambient" color="#404040" intensity="0.4"></a-light>
+    <a-light type="directional" position="2 4 2" color="#ffffff" intensity="0.8"></a-light>
+    
+    <!-- Mine areas with clear colors -->
+    <a-box id="area1" position="3 0.5 -2" color="#39ff14" width="2" height="1" depth="2" shadow="cast: true">
+      <a-text value="LOADING\nAREA 1" position="0 1 0" align="center" color="black" scale="0.8 0.8 0.8"></a-text>
+    </a-box>
+    
+    <a-box id="area2" position="-3 0.5 -5" color="#ff6b35" width="2" height="1" depth="2" shadow="cast: true">
+      <a-text value="EXCAVATION\nAREA 2" position="0 1 0" align="center" color="white" scale="0.8 0.8 0.8"></a-text>
+    </a-box>
+    
+    <a-box id="area3" position="0 0.5 -8" color="#4ecdc4" width="2" height="1" depth="2" shadow="cast: true">
+      <a-text value="CONTROL\nAREA 3" position="0 1 0" align="center" color="black" scale="0.8 0.8 0.8"></a-text>
+    </a-box>
 
-    <!-- Enhanced sky with gradient -->
-    <a-sky color="#1a1a2e" 
-           material="shader: gradient; topColor: #16213e; bottomColor: #0f0f10"></a-sky>
-
-    <!-- GLTF model entity with enhanced error handling -->
-    <a-entity id="mine"
-              gltf-model="#mineModel"
-              position="0 0 -6"
-              rotation="0 20 0"
-              scale="6 6 6"
-              visible="true"
-              shadow="cast: true; receive: true"
-              animation-mixer="clip: *; loop: repeat">
-    </a-entity>
-
-    <!-- Enhanced camera rig with smooth controls -->
-    <a-entity id="rig" position="0 1.8 4" 
-              movement-controls="fly: false; constrainToNavMesh: false">
-      <a-camera wasd-controls-enabled="false" 
-                look-controls="enabled: true; reverseMouseDrag: false; touchEnabled: true"
-                fov="75"
-                near="0.1"
-                far="1000"></a-camera>
+    <!-- Camera rig -->
+    <a-entity id="rig" position="0 1.6 2">
+      <a-camera wasd-controls-enabled="false" look-controls="enabled: true"></a-camera>
     </a-entity>
 
   </a-scene>
 
-  <!-- Enhanced joystick -->
-  <div id="joystick" aria-label="Movement joystick"></div>
-
-  <!-- Enhanced map UI -->
-  <div id="map" aria-label="Mine navigation map">
-    <h3>🗺️ Mine Navigation</h3>
-    <div class="legend">
-      <div><span class="marker" data-zone="1" role="button" tabindex="0">1</span> Loading Area</div>
-      <div><span class="marker" data-zone="2" role="button" tabindex="0">2</span> Excavation Zone</div>
-      <div><span class="marker" data-zone="3" role="button" tabindex="0">3</span> Control Station</div>
-    </div>
+  <!-- UI Elements -->
+  <div id="joystick"></div>
+  
+  <div id="map">
+    <h4 style="margin: 0 0 10px 0;">Mine Map</h4>
+    <div class="marker" data-zone="1">1</div> Loading Area<br>
+    <div class="marker" data-zone="2">2</div> Excavation Zone<br>
+    <div class="marker" data-zone="3">3</div> Control Station
   </div>
 
-  <!-- Enhanced status panel -->
-  <div id="status" aria-label="System status">
-    <div class="status-line ok">🚀 Mine VR System Initializing...</div>
+  <div id="status">
+    <div>Status: Ready</div>
   </div>
 
 <script>
-(function(){
-  'use strict';
-  
-  const statusEl = document.getElementById('status');
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  
-  // Enhanced status logging with better formatting
-  const setStatus = (text, cls='ok', showTime=true) => {
-    const line = document.createElement('div');
-    line.className = 'status-line ' + cls;
-    const timestamp = showTime ? `[${new Date().toLocaleTimeString()}] ` : '';
-    line.textContent = `${timestamp}${text}`;
-    statusEl.prepend(line);
-    
-    // Keep reasonable length and remove old entries
-    while(statusEl.children.length > 25) {
-      statusEl.removeChild(statusEl.lastChild);
-    }
-    
-    // Console logging with appropriate levels
-    const logLevel = cls === 'err' ? 'error' : cls === 'warn' ? 'warn' : 'log';
-    console[logLevel](`[Mine VR] ${text}`);
-  };
+// Simple, working version
+const rig = document.querySelector('#rig');
+const statusEl = document.querySelector('#status div');
 
-  const rig = document.querySelector('#rig');
-  const mineEl = document.querySelector('#mine');
-  const scene = document.querySelector('a-scene');
-  let modelLoaded = false;
-  let appInitialized = false;
+function updateStatus(message) {
+  statusEl.textContent = `Status: ${message}`;
+  console.log(message);
+}
 
-  // Hide loading overlay after scene loads
-  scene.addEventListener('loaded', () => {
-    setTimeout(() => {
-      loadingOverlay.style.opacity = '0';
-      setTimeout(() => {
-        loadingOverlay.style.display = 'none';
-      }, 500);
-    }, 1000);
+// Joystick setup
+if (window.nipplejs) {
+  const joystick = nipplejs.create({
+    zone: document.getElementById('joystick'),
+    mode: 'static',
+    position: { left: '50%', top: '50%' },
+    color: '#39ff14',
+    size: 80
   });
 
-  // Enhanced model loading with better error handling
-  mineEl.addEventListener('model-loaded', (evt) => {
-    modelLoaded = true;
-    setStatus('✅ 3D Mine model loaded successfully!', 'ok');
+  let moveX = 0, moveZ = 0;
 
-    try {
-      const model = evt.detail?.model;
-      if (model) {
-        let meshCount = 0;
-        model.traverse(node => {
-          if (node.isMesh) {
-            meshCount++;
-            // Enhanced material setup
-            if (node.material) {
-              node.material.side = THREE.DoubleSide;
-              node.material.needsUpdate = true;
-              
-              // Enhance PBR materials if available
-              if (node.material.isMeshStandardMaterial) {
-                node.material.envMapIntensity = 0.8;
-              }
-            }
-            
-            // Enhanced shadow setup
-            node.castShadow = true;
-            node.receiveShadow = true;
-            
-            // Ensure proper frustum culling
-            node.frustumCulled = true;
-          }
-        });
-        
-        setStatus(`🔧 Applied enhancements to ${meshCount} mesh objects`, 'ok');
-        setStatus('🎯 Model ready for VR exploration!', 'ok');
-      }
-    } catch (e) {
-      setStatus(`⚠️ Post-processing warning: ${e.message}`, 'warn');
-    }
-    
-    if (!appInitialized) {
-      initializeApp();
-    }
+  joystick.on('move', (evt, data) => {
+    if (!data) return;
+    const angle = data.angle.radian;
+    const force = Math.min(data.force, 2);
+    moveX = Math.sin(angle) * force * 0.02;
+    moveZ = -Math.cos(angle) * force * 0.02;
+    updateStatus(`Moving: ${moveX.toFixed(2)}, ${moveZ.toFixed(2)}`);
   });
 
-  // Enhanced error handling for model loading
-  mineEl.addEventListener('model-error', (evt) => {
-    setStatus('❌ Model failed to load - check file path and CORS settings', 'err');
-    createFallbackContent();
+  joystick.on('end', () => {
+    moveX = 0;
+    moveZ = 0;
+    updateStatus('Stopped');
   });
 
-  // Timeout fallback with better UX
-  const modelTimeout = setTimeout(() => {
-    if (!modelLoaded) {
-      setStatus('⏰ Model loading timeout (30s) - creating fallback', 'warn');
-      createFallbackContent();
-      if (!appInitialized) {
-        initializeApp();
-      }
-    }
-  }, 30000);
-
-  // Enhanced fallback content creation
-  function createFallbackContent() {
-    const fallbackContainer = document.createElement('a-entity');
-    fallbackContainer.setAttribute('id', 'fallback-mine');
-    fallbackContainer.setAttribute('position', '0 0 -6');
-    
-    // Create multiple colored boxes to represent mine areas
-    const areas = [
-      {pos: '2 1 0', color: '#39ff14', label: 'Loading'},
-      {pos: '-3 1 -3', color: '#ff6b35', label: 'Excavation'},
-      {pos: '1 1 -8', color: '#4ecdc4', label: 'Control'}
-    ];
-    
-    areas.forEach((area, i) => {
-      const box = document.createElement('a-box');
-      box.setAttribute('position', area.pos);
-      box.setAttribute('color', area.color);
-      box.setAttribute('depth', '2');
-      box.setAttribute('height', '1.5');
-      box.setAttribute('width', '2');
-      box.setAttribute('shadow', 'cast: true; receive: true');
-      
-      // Add text label
-      const text = document.createElement('a-text');
-      text.setAttribute('value', area.label);
-      text.setAttribute('position', '0 1.2 0');
-      text.setAttribute('align', 'center');
-      text.setAttribute('color', '#ffffff');
-      text.setAttribute('scale', '3 3 3');
-      box.appendChild(text);
-      
-      fallbackContainer.appendChild(box);
+  // Movement loop
+  function move() {
+    const pos = rig.getAttribute('position');
+    rig.setAttribute('position', {
+      x: pos.x + moveX,
+      y: pos.y,
+      z: pos.z + moveZ
     });
-    
-    scene.appendChild(fallbackContainer);
-    setStatus('🏗️ Created interactive fallback mine layout', 'ok');
+    requestAnimationFrame(move);
   }
+  move();
 
-  // Enhanced joystick setup with better performance
-  function initializeJoystick() {
-    const joystickZone = document.getElementById('joystick');
-    
-    if (!window.nipplejs) {
-      setStatus('❌ Joystick library unavailable', 'err');
-      return;
-    }
+  updateStatus('Joystick ready');
+} else {
+  updateStatus('Joystick library failed to load');
+}
 
-    // Calculate center position more reliably
-    const updateJoystickPosition = () => {
-      const rect = joystickZone.getBoundingClientRect();
-      return {
-        left: rect.left + rect.width/2,
-        top: rect.top + rect.height/2
-      };
-    };
-
-    const joystick = nipplejs.create({
-      zone: joystickZone,
-      mode: 'static',
-      position: { left: '50%', top: '50%' }, // Center within the zone
-      color: '#39ff14',
-      size: 100, // Smaller size for better fit
-      restOpacity: 0.7,
-      fadeTime: 250
-    });
-
-    let moveVector = { x: 0, z: 0 };
-    let isMoving = false;
-    const MOVE_SPEED = 0.04;
-    const SMOOTH_FACTOR = 0.1;
-
-    joystick.on('start', () => {
-      isMoving = true;
-      joystickZone.style.transform = 'scale(1.05)';
-      setStatus('🕹️ Movement activated', 'ok');
-    });
-
-    joystick.on('move', (evt, data) => {
-      if (!data) return;
-      
-      const angle = data.angle?.radian || 0;
-      const force = Math.min(data.force || 0, 3);
-      const scaledForce = force * MOVE_SPEED;
-      
-      // Smooth movement vector update
-      const targetX = Math.sin(angle) * scaledForce;
-      const targetZ = -Math.cos(angle) * scaledForce;
-      
-      moveVector.x += (targetX - moveVector.x) * SMOOTH_FACTOR;
-      moveVector.z += (targetZ - moveVector.z) * SMOOTH_FACTOR;
-    });
-
-    joystick.on('end', () => {
-      isMoving = false;
-      joystickZone.style.transform = 'scale(1)';
-      // Gradually stop movement
-      const stopMovement = () => {
-        if (!isMoving) {
-          moveVector.x *= 0.9;
-          moveVector.z *= 0.9;
-          if (Math.abs(moveVector.x) > 0.001 || Math.abs(moveVector.z) > 0.001) {
-            requestAnimationFrame(stopMovement);
-          } else {
-            moveVector.x = moveVector.z = 0;
-          }
-        }
-      };
-      requestAnimationFrame(stopMovement);
-      setStatus('🛑 Movement stopped', 'ok');
-    });
-
-    // Enhanced movement system with collision bounds
-    function updateMovement() {
-      try {
-        const pos = rig.getAttribute('position');
-        const newX = (pos.x || 0) + moveVector.x;
-        const newY = pos.y || 1.8;
-        const newZ = (pos.z || 0) + moveVector.z;
-        
-        // Simple boundary checking
-        const bounds = { x: [-20, 20], z: [-25, 10] };
-        const clampedX = Math.max(bounds.x[0], Math.min(bounds.x[1], newX));
-        const clampedZ = Math.max(bounds.z[0], Math.min(bounds.z[1], newZ));
-        
-        rig.setAttribute('position', { x: clampedX, y: newY, z: clampedZ });
-      } catch(e) {
-        // Silent error handling
-      }
-      requestAnimationFrame(updateMovement);
-    }
-    updateMovement();
-    
-    setStatus('🎮 Advanced joystick controls ready', 'ok');
-    
-    // Handle window resize
-    window.addEventListener('resize', () => {
-      joystick.options.position = updateJoystickPosition();
-    });
-  }
-
-  // Enhanced teleportation with smooth animations
-  function setupTeleportation() {
-    const markers = document.querySelectorAll('.marker');
-    
-    markers.forEach(marker => {
-      // Support both touch and click
-      ['click', 'touchend'].forEach(eventType => {
-        marker.addEventListener(eventType, (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          const zone = parseInt(marker.getAttribute('data-zone'), 10);
-          setStatus(`🎯 Teleporting to zone ${zone}...`, 'ok');
-          teleportToZone(zone);
-        }, { passive: false });
-      });
-      
-      // Keyboard support
-      marker.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          const zone = parseInt(marker.getAttribute('data-zone'), 10);
-          teleportToZone(zone);
-        }
-      });
-    });
-  }
-
-  // Enhanced teleportation with better positions and smoother animation
-  function teleportToZone(zone) {
+// Map teleport
+document.querySelectorAll('.marker').forEach(marker => {
+  marker.addEventListener('click', () => {
+    const zone = marker.getAttribute('data-zone');
     const positions = {
-      1: { x: 3, y: 2.2, z: -1 },    // Loading Area (elevated view)
-      2: { x: -4, y: 1.8, z: -7 },   // Excavation Zone  
-      3: { x: 2, y: 2.5, z: -12 }    // Control Station (high overview)
+      '1': { x: 3, y: 1.6, z: -2 },
+      '2': { x: -3, y: 1.6, z: -5 },
+      '3': { x: 0, y: 1.6, z: -8 }
     };
     
-    const target = positions[zone];
-    if (!target) {
-      setStatus(`❌ Unknown zone: ${zone}`, 'warn');
-      return;
+    if (positions[zone]) {
+      rig.setAttribute('position', positions[zone]);
+      updateStatus(`Teleported to zone ${zone}`);
     }
+  });
+});
 
-    const start = rig.getAttribute('position');
-    const duration = 800;
-    const startTime = performance.now();
-    
-    function animateTransition(currentTime) {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      // Enhanced easing function (ease-in-out-cubic)
-      const eased = progress < 0.5 
-        ? 4 * progress * progress * progress 
-        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-      
-      const current = {
-        x: start.x + (target.x - start.x) * eased,
-        y: start.y + (target.y - start.y) * eased,
-        z: start.z + (target.z - start.z) * eased
-      };
-      
-      rig.setAttribute('position', current);
-      
-      if (progress < 1) {
-        requestAnimationFrame(animateTransition);
-      } else {
-        setStatus(`✅ Arrived at zone ${zone}`, 'ok');
-      }
-    }
-    
-    requestAnimationFrame(animateTransition);
-  }
-
-  // Enhanced app initialization
-  function initializeApp() {
-    if (appInitialized) return;
-    appInitialized = true;
-    
-    setStatus('🎮 Initializing VR controls...', 'ok');
-    
-    try {
-      initializeJoystick();
-      setupTeleportation();
-      
-      // Additional mobile optimizations
-      if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        setStatus('📱 Mobile VR optimizations applied', 'ok');
-        // Reduce quality for better performance on mobile
-        scene.setAttribute('renderer', 'antialias: false; physicallyCorrectLights: false');
-      }
-      
-      setStatus('🚀 Mine VR Experience Ready!', 'ok');
-      setStatus('💡 Use joystick to move, tap map markers to teleport', 'ok');
-      
-    } catch (error) {
-      setStatus(`❌ Initialization error: ${error.message}`, 'err');
-    }
-  }
-
-  // Initialize immediately if model is already loaded
-  if (modelLoaded) {
-    initializeApp();
-  }
-
-  // Global debug interface
-  window.__mineDebug = {
-    teleportToZone,
-    setStatus,
-    rig,
-    scene,
-    version: '2.0'
-  };
-
-  setStatus('🔍 Debug: Check browser console for CORS/loading issues', 'warn');
-  setStatus('🌐 Tip: Serve via HTTP(S), not file:// for best results', 'warn');
-
-})();
+updateStatus('Mine VR loaded');
 </script>
 
 </body>
