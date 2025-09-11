@@ -14,23 +14,35 @@
         width: 220px;
         padding: 15px;
         border-radius: 16px;
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.12);
         backdrop-filter: blur(10px);
         color: #fff;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.5);
       }
       #map h3 { margin: 0 0 10px; font-size: 16px; text-align: center; }
-      .legend { font-size: 13px; margin-top: 10px; line-height: 1.4em; }
-      .marker { font-weight: bold; color: #ff4444; }
+      .legend { font-size: 14px; margin-top: 10px; line-height: 1.6em; }
+      .marker {
+        font-weight: bold;
+        color: #39ff14; /* neon green */
+        cursor: pointer;
+        text-shadow: 0 0 8px #39ff14;
+      }
+      .marker:hover {
+        color: #fff;
+        text-shadow: 0 0 12px #39ff14, 0 0 20px #39ff14;
+      }
 
       /* Joystick */
       #joystick {
         position: fixed;
         bottom: 40px;
         left: 40px;
-        width: 120px;
-        height: 120px;
-        touch-action: none; /* important for mobile */
+        width: 150px;
+        height: 150px;
+        touch-action: none;
+        border-radius: 50%;
+        background: rgba(0, 255, 100, 0.1);
+        box-shadow: 0 0 25px #39ff14;
       }
     </style>
   </head>
@@ -39,9 +51,7 @@
 
       <!-- LIGHTS -->
       <a-entity light="type: directional; intensity: 1; castShadow: true" position="2 4 5"></a-entity>
-      <a-entity light="type: ambient; intensity: 0.8"></a-entity>
-
-      <!-- Optional sky to prevent black pixels -->
+      <a-entity light="type: ambient; intensity: 0.9"></a-entity>
       <a-sky color="#101010"></a-sky>
 
       <!-- OPEN PIT MINE MODEL -->
@@ -65,9 +75,9 @@
     <div id="map">
       <h3>Mine Map</h3>
       <div class="legend">
-        <span class="marker">1</span> Loading Area<br>
-        <span class="marker">2</span> Excavation Zone<br>
-        <span class="marker">3</span> Control Station
+        <span class="marker" onclick="teleportTo(1)">1</span> Loading Area<br>
+        <span class="marker" onclick="teleportTo(2)">2</span> Excavation Zone<br>
+        <span class="marker" onclick="teleportTo(3)">3</span> Control Station
       </div>
     </div>
 
@@ -79,17 +89,17 @@
       const joystick = nipplejs.create({
         zone: document.getElementById("joystick"),
         mode: "static",
-        position: { left: 60, bottom: 60 },
+        position: { left: 75, bottom: 75 },
         color: "lime",
-        size: 120
+        size: 150
       });
 
       joystick.on("move", (evt, data) => {
         if (!data.angle || !data.force) return;
         const angle = data.angle.radian;
         const force = data.force;
-        moveX = Math.sin(angle) * force * 0.03;  // A-Frame X axis
-        moveZ = -Math.cos(angle) * force * 0.03; // negative Z is forward
+        moveX = Math.sin(angle) * force * 0.03;
+        moveZ = -Math.cos(angle) * force * 0.03;
       });
 
       joystick.on("end", () => { moveX = 0; moveZ = 0; });
@@ -105,6 +115,16 @@
         requestAnimationFrame(tick);
       }
       tick();
+
+      // Teleport to map markers
+      function teleportTo(zone) {
+        let positions = {
+          1: { x: 2, y: 1.6, z: -2 },  // Loading Area
+          2: { x: -3, y: 1.6, z: -6 }, // Excavation Zone
+          3: { x: 1, y: 1.6, z: -10 }  // Control Station
+        };
+        rig.setAttribute("position", positions[zone]);
+      }
     </script>
   </body>
 </html>
