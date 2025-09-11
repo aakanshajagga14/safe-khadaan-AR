@@ -2,129 +2,102 @@
   <head>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
     <style>
-      body { margin: 0; overflow: hidden; }
-      /* On-screen joystick */
-      #joystick {
-        position: fixed;
-        bottom: 30px;
-        left: 30px;
-        width: 120px;
-        height: 120px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      #stick {
-        width: 60px;
-        height: 60px;
-        background: limegreen;
-        border-radius: 50%;
-        box-shadow: 0 0 10px lime;
-        touch-action: none;
-      }
-      /* Map overlay */
+      body { margin: 0; overflow: hidden; font-family: sans-serif; }
+
+      /* Glassmorphic Map UI */
       #map {
         position: fixed;
         top: 20px;
         right: 20px;
-        width: 200px;
-        height: 200px;
-        background: rgba(0,0,0,0.6);
-        border-radius: 12px;
-        padding: 10px;
-        color: white;
-        font-family: sans-serif;
-        font-size: 14px;
+        width: 220px;
+        padding: 15px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        color: #fff;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
       }
-      .marker {
-        background: red;
-        color: white;
-        padding: 2px 6px;
-        border-radius: 50%;
-        font-size: 12px;
-        position: absolute;
-      }
-      .legend {
-        margin-top: 10px;
+      #map h3 { margin: 0 0 10px; font-size: 16px; text-align: center; }
+      .legend { font-size: 13px; margin-top: 10px; line-height: 1.4em; }
+      .marker { font-weight: bold; color: #ff4444; }
+
+      /* Joystick */
+      #joystick {
+        position: fixed;
+        bottom: 40px;
+        left: 40px;
+        width: 120px;
+        height: 120px;
       }
     </style>
   </head>
   <body>
-    <a-scene background="color: black">
+    <a-scene background="color: #101010">
 
       <!-- LIGHTS -->
-      <a-entity light="type: directional; intensity: 1" position="1 2 2"></a-entity>
-      <a-entity light="type: ambient; intensity: 0.5"></a-entity>
+      <a-entity light="type: directional; intensity: 1" position="2 4 5"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.7"></a-entity>
 
-      <!-- MINE MODEL -->
+      <!-- OPEN PIT MINE MODEL -->
       <a-entity id="mine"
         gltf-model="mine_ar_map.glb"
-        position="0 0 -8"
-        scale="8 8 8"
-        rotation="0 30 0">
+        position="0 0 -6"
+        scale="6 6 6"
+        rotation="0 20 0">
       </a-entity>
 
       <!-- CAMERA RIG -->
-      <a-entity id="rig" position="0 1.6 0">
-        <a-camera></a-camera>
+      <a-entity id="rig" position="0 1.6 3">
+        <a-camera look-controls="enabled: true"></a-camera>
       </a-entity>
     </a-scene>
 
-    <!-- On-screen joystick -->
-    <div id="joystick"><div id="stick"></div></div>
+    <!-- Joystick container -->
+    <div id="joystick"></div>
 
-    <!-- Map overlay with markers -->
+    <!-- Map overlay -->
     <div id="map">
-      <div style="text-align:center; font-weight:bold;">Mine Map</div>
-      <div id="mapArea" style="position:relative; width:100%; height:120px; background:#333; border-radius:8px;">
-        <div class="marker" style="top:20px; left:50px;">1</div>
-        <div class="marker" style="top:60px; left:120px;">2</div>
-        <div class="marker" style="top:90px; left:80px;">3</div>
-      </div>
+      <h3>Mine Map</h3>
       <div class="legend">
-        <b>Legend:</b><br>
-        1 - Loading Area<br>
-        2 - Excavation Zone<br>
-        3 - Control Station
+        <span class="marker">1</span> Loading Area<br>
+        <span class="marker">2</span> Excavation Zone<br>
+        <span class="marker">3</span> Control Station
       </div>
     </div>
 
     <script>
-      // Joystick controls
-      const stick = document.getElementById("stick");
+      // Setup joystick
       const rig = document.querySelector("#rig");
-      let dragging = false;
+      let moveX = 0, moveZ = 0;
 
-      stick.addEventListener("touchstart", () => dragging = true);
-      stick.addEventListener("touchend", () => {
-        dragging = false;
-        stick.style.transform = "translate(0,0)";
+      const joystick = nipplejs.create({
+        zone: document.getElementById("joystick"),
+        mode: "static",
+        position: { left: "60px", bottom: "60px" },
+        color: "lime",
+        size: 120
       });
 
-      stick.addEventListener("touchmove", (e) => {
-        if (!dragging) return;
-        let touch = e.touches[0];
-        let rect = stick.parentElement.getBoundingClientRect();
-        let dx = touch.clientX - (rect.left + rect.width/2);
-        let dy = touch.clientY - (rect.top + rect.height/2);
+      joystick.on("move", (evt, data) => {
+        const angle = data.angle ? data.angle.radian : 0;
+        const force = data.force ? data.force : 0;
+        moveX = Math.cos(angle) * force * 0.02;
+        moveZ = Math.sin(angle) * force * 0.02;
+      });
 
-        // limit stick movement
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist > 40) {
-          dx = dx * 40 / dist;
-          dy = dy * 40 / dist;
-        }
-        stick.style.transform = `translate(${dx}px,${dy}px)`;
+      joystick.on("end", () => { moveX = 0; moveZ = 0; });
 
-        // move rig smoothly
+      // Smooth movement
+      function tick() {
         let pos = rig.getAttribute("position");
-        pos.x += dx * 0.002;
-        pos.z += dy * 0.002;
+        pos.x += moveX;
+        pos.z += moveZ;
         rig.setAttribute("position", pos);
-      });
+        requestAnimationFrame(tick);
+      }
+      tick();
     </script>
   </body>
 </html>
