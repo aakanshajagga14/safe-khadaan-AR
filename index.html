@@ -4,75 +4,57 @@
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
   </head>
   <body>
-    <a-scene background="color: #0b0b0c">
+    <a-scene background="color: black">
 
-      <!-- LIGHTING (premium HDR style) -->
-      <a-entity light="type: hemisphere; color: #ffffff; groundColor: #333333; intensity: 1.2"></a-entity>
-      <a-entity light="type: directional; intensity: 0.9" position="3 6 2"></a-entity>
-      <a-entity light="type: ambient; intensity: 1; color: #bbbbbb"></a-entity>
+      <!-- LIGHTING -->
+      <a-entity light="type: directional; intensity: 1" position="1 2 2"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.5"></a-entity>
 
       <!-- MINE MODEL -->
       <a-entity id="mine"
         gltf-model="mine_ar_map.glb"
-        position="0 -1.2 -6"
-        scale="5 5 5"
-        rotation="0 20 0">
+        position="0 0 -8"
+        scale="6 6 6"
+        rotation="0 30 0">
       </a-entity>
 
-      <!-- CAMERA RIG -->
+      <!-- Example clickable ZONES -->
+      <a-box id="zone1" position="-1 0 -6" depth="1" height="1" width="1" color="red" opacity="0.5"></a-box>
+      <a-box id="zone2" position="2 0 -7" depth="1" height="1" width="1" color="blue" opacity="0.5"></a-box>
+
+      <!-- INFO PANEL -->
+      <a-entity id="infoPanel" visible="false" position="0 2 -3">
+        <a-plane width="2.5" height="1.2" color="black" opacity="0.8"></a-plane>
+        <a-text id="infoText" value="Zone info here" color="white" wrap-count="30" align="center" position="0 0 0.1"></a-text>
+      </a-entity>
+
+      <!-- CAMERA -->
       <a-entity id="rig" position="0 1.6 0">
         <a-camera></a-camera>
       </a-entity>
 
-      <!-- FLOATING PREMIUM UI PANELS -->
-      <!-- Zone Buttons -->
-      <a-entity id="ui" position="1.5 2 -3">
-        <a-plane width="1.2" height="1.8" color="#111822" opacity="0.85" 
-                 material="shader: flat" radius="0.05"></a-plane>
-
-        <a-text value="⚠️ Zones" position="-0.45 0.75 0.01" 
-                color="#00ffae" width="2" font="mozillavr"></a-text>
-
-        <a-plane id="zone1" position="0 0.4 0.01" width="1" height="0.25" 
-                 color="#1a1f2d" opacity="0.95" class="clickable">
-          <a-text value="Zone 1: High Risk" align="center" color="#ff6363" position="0 0 0.01" width="2"></a-text>
-        </a-plane>
-
-        <a-plane id="zone2" position="0 0 0.01" width="1" height="0.25" 
-                 color="#1a1f2d" opacity="0.95" class="clickable">
-          <a-text value="Zone 2: Stable" align="center" color="#9cff8a" position="0 0 0.01" width="2"></a-text>
-        </a-plane>
-
-        <a-plane id="zone3" position="0 -0.4 0.01" width="1" height="0.25" 
-                 color="#1a1f2d" opacity="0.95" class="clickable">
-          <a-text value="Zone 3: Gas Alert" align="center" color="#ffd966" position="0 0 0.01" width="2"></a-text>
-        </a-plane>
-      </a-entity>
-
-      <!-- Info Panel -->
-      <a-entity id="infoPanel" position="-1.5 2 -3">
-        <a-plane width="1.6" height="1.2" color="#111822" opacity="0.9" radius="0.05"></a-plane>
-        <a-text id="infoText" value="Select a zone to view risk details" 
-                color="#e6f7ee" position="-0.75 0.4 0.01" width="2"></a-text>
-      </a-entity>
-
-      <!-- INTERACTIVITY SCRIPT -->
       <script>
-        const infoText = document.getElementById("infoText");
+        // Info database
+        const zoneInfo = {
+          zone1: "Zone 1 has 10% gas leakage risk. Escape time: 3 mins.",
+          zone2: "Zone 2 has 15% rockfall chances. Escape time: 5 mins."
+        };
 
-        function setInfo(text, color){
-          infoText.setAttribute("value", text);
-          infoText.setAttribute("color", color);
-        }
+        // Click listener for zones
+        document.querySelectorAll("#zone1, #zone2").forEach(zone => {
+          zone.addEventListener("click", function () {
+            let panel = document.querySelector("#infoPanel");
+            let text = document.querySelector("#infoText");
+            text.setAttribute("value", zoneInfo[this.id]); // set info text
+            panel.setAttribute("visible", "true");
+          });
+        });
 
-        document.querySelector("#zone1").addEventListener("click", ()=> {
-          setInfo("Zone 1: Rockfall probability 75%. Escape time: 2 mins", "#ff6363");
-        });
-        document.querySelector("#zone2").addEventListener("click", ()=> {
-          setInfo("Zone 2: Stable. No immediate risk.", "#9cff8a");
-        });
-        document.querySelector("#zone3").addEventListener("click", ()=> {
-          setInfo("Zone 3: Gas detected. Toxic level high.", "#ffd966");
+        // Hide info panel if user presses ESC
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            document.querySelector("#infoPanel").setAttribute("visible", "false");
+          }
         });
       </script>
 
