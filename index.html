@@ -2,146 +2,130 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>SafeKhadaan — Model Load Debug</title>
+  <title>SafeKhadaan — GLB Viewer</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body{margin:0;font-family:Inter,Arial;background:#0b0b0c;color:#e6f7ee}
-    #status{position:fixed;left:10px;top:10px;background:rgba(0,0,0,0.6);padding:12px;border-radius:8px;max-width:calc(100% - 40px)}
-    #canvasWrap{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
-    #log{white-space:pre-wrap;font-size:13px;color:#ffdfe0;margin-top:8px}
+    body{margin:0;font-family:Inter,Arial;background:#0b0b0c;color:#e6f7ee;overflow:hidden}
+    #status{position:fixed;left:10px;top:10px;background:rgba(0,0,0,0.6);padding:10px;border-radius:8px;max-width:80%}
+    #log{white-space:pre-wrap;font-size:12px;color:#ffdfe0;margin-top:6px}
     a{color:#8ef7bf}
+    canvas{display:block}
   </style>
 </head>
 <body>
   <div id="status">
-    <div id="msg">Initializing loader…</div>
+    <div id="msg">Loading model…</div>
     <div id="log"></div>
   </div>
-  <div id="canvasWrap"><canvas id="c"></canvas></div>
+  <canvas id="c"></canvas>
 
+  <!-- Three.js + helpers -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/loaders/DRACOLoader.js"></script>
   <script>
-  const logEl = document.getElementById('log');
-  function log(...t){ console.log(...t); logEl.textContent += Array.from(t).join(' ') + '\\n'; }
-  const msg = (s)=>document.getElementById('msg').textContent = s;
+    const logEl = document.getElementById('log');
+    const msg = (s)=>document.getElementById('msg').textContent = s;
+    function log(...t){ console.log(...t); logEl.textContent += Array.from(t).join(' ') + '\n'; }
 
-  // CONFIG: set the path to your uploaded glb (relative to this HTML file)
-  const MODEL_PATH = 'mine_ar_map.glb'; // <-- change if your file is in /assets/mine.glb etc.
+    // 👉 IMPORTANT: put your .glb in the same folder or update the path here
+    const MODEL_PATH = 'mine_ar_map.glb';
 
-  // Fallback model (small) — used only to confirm the viewer works
-  const FALLBACK = 'https://rawcdn.githack.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb';
+    // Fallback test model
+    const FALLBACK = 'https://rawcdn.githack.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb';
 
-  // Basic three.js setup
-  const canvas = document.getElementById('c');
-  const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0b0b0c);
-  const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 2000);
-  camera.position.set(0,2,6);
-  const controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
-
-  // lights
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x222244, 1.0));
-  const d = new THREE.DirectionalLight(0xffffff, 0.8); d.position.set(5,10,7); scene.add(d);
-
-  // ground
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(200,200), new THREE.MeshBasicMaterial({color:0x222222}));
-  ground.rotation.x = -Math.PI/2; ground.position.y = -1.5; scene.add(ground);
-
-  // GLTF loader + DRACO support
-  const dracoLoader = new THREE.DRACOLoader();
-  // CDN path for Draco decoder
-  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/'); // common CDN
-  const loader = new THREE.GLTFLoader();
-  loader.setDRACOLoader(dracoLoader);
-
-  let modelObject = null;
-
-  function attemptLoad(path){
-    msg('Loading: ' + path);
-    log('Attempting to load model from:', path);
-    loader.load(path,
-      (gltf)=>{
-        log('Model loaded OK:', path);
-        msg('Model loaded — rendering scene');
-        if (modelObject) scene.remove(modelObject);
-        modelObject = gltf.scene;
-        // auto-center and scale heuristics
-        // compute bounding box and re-center
-        const box = new THREE.Box3().setFromObject(modelObject);
-        const size = new THREE.Vector3(); box.getSize(size);
-        const center = new THREE.Vector3(); box.getCenter(center);
-        log('Model bbox size:', size.x.toFixed(2), size.y.toFixed(2), size.z.toFixed(2));
-        // normalize scale (target approx ~ 3 units height)
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scaleFactor = (maxDim > 0) ? (3.0 / maxDim) : 1.0;
-        modelObject.scale.setScalar(scaleFactor);
-        // center model at origin
-        modelObject.position.sub(center.multiplyScalar(scaleFactor));
-        modelObject.position.y += 0.5; // raise slightly above ground
-        scene.add(modelObject);
-        // nice camera framing
-        controls.target.set(0, 0.8, 0);
-        camera.position.set(0, 1.6 + Math.max(2, maxDim), Math.max(4, Math.max(4, maxDim)*2));
-      },
-      (xhr)=> {
-        // progress
-        const pct = xhr.total ? (xhr.loaded / xhr.total * 100).toFixed(0) : '??';
-        log('Loading progress: ' + pct + '%');
-      },
-      (err)=>{
-        log('Model load ERROR:', err && err.message ? err.message : err );
-        msg('Model load failed — check console & network');
-        // fallback test
-        if (path !== FALLBACK) {
-          log('Trying fallback model to verify viewer works...');
-          attemptLoad(FALLBACK);
-        }
-      }
-    );
-  }
-
-  // test whether your path exists quickly by requesting head
-  function checkURL(path){
-    fetch(path, { method: 'HEAD' })
-      .then(res=>{
-        log('HTTP HEAD', path, '=>', res.status);
-        if (res.ok) attemptLoad(path);
-        else {
-          log('HEAD failed; attempting direct GET to see error...');
-          attemptLoad(path); // loader will show error too
-        }
-      })
-      .catch(err=>{
-        log('HEAD request error (likely path/CORS):', err.message);
-        // still try loader (it will show clearer error)
-        attemptLoad(path);
-      });
-  }
-
-  // Start!
-  checkURL(MODEL_PATH);
-
-  // render loop
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-  }
-  animate();
-
-  window.addEventListener('resize', ()=> {
+    // Renderer
+    const canvas = document.getElementById('c');
+    const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
-    camera.aspect = window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-  });
+
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b0b0c);
+
+    // Camera + Controls
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 5000);
+    camera.position.set(0,2,6);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.1;
+
+    // Lights
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x333355, 1.0));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+    dir.position.set(5,10,7);
+    scene.add(dir);
+
+    // Ground plane
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(200,200),
+      new THREE.MeshPhongMaterial({color:0x222222, depthWrite:false})
+    );
+    ground.rotation.x = -Math.PI/2;
+    ground.position.y = -1.5;
+    scene.add(ground);
+
+    // Loaders
+    const dracoLoader = new THREE.DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+    const loader = new THREE.GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+
+    let model = null;
+
+    function loadModel(path){
+      msg('Loading: ' + path);
+      loader.load(path, (gltf)=>{
+        log('✅ Loaded:', path);
+        msg('Model loaded successfully');
+
+        if(model) scene.remove(model);
+        model = gltf.scene;
+
+        // Center & scale automatically
+        const box = new THREE.Box3().setFromObject(model);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 5.0 / maxDim; // scale model ~5 units tall
+        model.scale.setScalar(scale);
+        model.position.sub(center.multiplyScalar(scale));
+
+        scene.add(model);
+
+        // Frame camera nicely
+        controls.target.set(0, 0, 0);
+        camera.position.set(0, size.y * 0.5 * scale + 4, maxDim * scale * 2);
+      }, (xhr)=>{
+        msg('Loading ' + ((xhr.loaded / xhr.total) * 100).toFixed(1) + '%');
+      }, (err)=>{
+        log('❌ ERROR loading model:', err.message || err);
+        msg('Failed to load, loading fallback');
+        if(path !== FALLBACK) loadModel(FALLBACK);
+      });
+    }
+
+    loadModel(MODEL_PATH);
+
+    // Animate
+    function animate(){
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Resize
+    window.addEventListener('resize', ()=>{
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    });
   </script>
 </body>
 </html>
