@@ -1,6 +1,7 @@
 <html>
   <head>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
   </head>
   <body>
     <a-scene background="color: black">
@@ -16,13 +17,6 @@
         scale="6 6 6"
         rotation="0 30 0">
       </a-entity>
-
-      <!-- RED DOT FOR ZONE 2 -->
-      <a-sphere id="zone2-marker"
-        position="1 2 -6"   <!-- adjust this to place above Zone 2 -->
-        radius="0.2"
-        material="color: red; emissive: red; emissiveIntensity: 1; shader: standard">
-      </a-sphere>
 
       <!-- INFO PANEL -->
       <a-entity id="infoPanel" position="0 2 -3">
