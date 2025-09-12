@@ -1,430 +1,66 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Mine VR - GitHub Edition</title>
+<html>
+  <head>
+    <title>SafeKhadaan VR Dashboard</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
-    
-    <style>
-        body { 
-            margin: 0; 
-            background: #0a0a0a; 
-            color: white; 
-            font-family: Arial, sans-serif; 
-            overflow: hidden;
-        }
-        
-        /* Status panel */
-        #status {
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            background: rgba(0, 0, 0, 0.9);
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 12px;
-            max-width: 350px;
-            max-height: 40vh;
-            overflow-y: auto;
-            z-index: 2000;
-            font-size: 12px;
-            line-height: 1.4;
-        }
-        
-        .log { 
-            margin: 3px 0; 
-            font-family: monospace; 
-        }
-        .ok { color: #4CAF50; }
-        .warn { color: #FF9800; }
-        .error { color: #F44336; }
-        .info { color: #2196F3; }
-        
-        /* Map UI */
-        #map {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            width: 200px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid rgba(57, 255, 20, 0.3);
-            border-radius: 10px;
-            padding: 15px;
-            z-index: 2000;
-        }
-        
-        #map h3 {
-            margin: 0 0 10px 0;
-            text-align: center;
-            color: #39ff14;
-        }
-        
-        .marker {
-            display: inline-block;
-            background: #39ff14;
-            color: #000;
-            padding: 4px 8px;
-            margin: 2px 5px 2px 0;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-        }
-        
-        .marker:hover {
-            background: #4fff24;
-            transform: scale(1.1);
-        }
-        
-        /* Joystick */
-        #joystick {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            width: 120px;
-            height: 120px;
-            background: rgba(57, 255, 20, 0.1);
-            border: 2px solid rgba(57, 255, 20, 0.4);
-            border-radius: 50%;
-            z-index: 2000;
-            touch-action: none;
-            box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
-        }
-        
-        /* GitHub info */
-        #github-info {
-            position: fixed;
-            bottom: 15px;
-            right: 15px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            z-index: 2000;
-            color: #888;
-        }
-        
-        /* Mobile responsive */
-        @media (max-width: 480px) {
-            #status { 
-                width: calc(100vw - 40px); 
-                max-width: none; 
-                max-height: 25vh;
-                font-size: 11px;
-            }
-            #map { width: 160px; padding: 10px; }
-            #joystick { width: 100px; height: 100px; bottom: 20px; left: 20px; }
-            #github-info { font-size: 10px; }
-        }
-    </style>
-</head>
-<body>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-orbit-controls@1.3.0/dist/aframe-orbit-controls.min.js"></script>
+  </head>
+  <body>
+    <a-scene background="color: #111">
 
-<a-scene embedded 
-         renderer="antialias: true; colorManagement: true; alpha: false"
-         vr-mode-ui="enabled: true"
-         background="color: #001122">
-    
-    <a-assets timeout="30000">
-        <!-- Your GLB model from same folder -->
-        <a-asset-item id="mineModel" 
-                      src="./mine_ar_map.glb"
-                      crossorigin="anonymous">
-        </a-asset-item>
-    </a-assets>
-    
-    <!-- Environment -->
-    <a-sky color="#001122"></a-sky>
-    <a-plane position="0 -0.5 -5" 
-             rotation="-90 0 0" 
-             width="40" 
-             height="40" 
-             color="#1a1a1a" 
-             shadow="receive: true">
-    </a-plane>
-    
-    <!-- Enhanced lighting -->
-    <a-light type="ambient" intensity="0.4" color="#404040"></a-light>
-    <a-light type="directional" 
-             position="10 15 5" 
-             intensity="1.2" 
-             color="#ffffff"
-             shadow="cast: true; shadowMapWidth: 2048; shadowMapHeight: 2048">
-    </a-light>
-    <a-light type="point" position="0 5 0" intensity="0.6" distance="20"></a-light>
-    
-    <!-- Your mine model -->
-    <a-entity id="mine" 
-              gltf-model="#mineModel" 
-              position="0 0 -8" 
-              rotation="0 0 0" 
-              scale="1 1 1"
-              shadow="cast: true; receive: true">
-    </a-entity>
-    
-    <!-- Fallback content (if model fails) -->
-    <a-entity id="fallback" visible="false" position="0 0 -8">
-        <a-box position="0 1 0" width="6" height="2" depth="10" color="#333">
-            <a-text value="MINE FALLBACK" position="0 1.2 0" align="center" color="#39ff14"></a-text>
-        </a-box>
-        <a-box position="3 0.5 2" width="2" height="1" depth="2" color="#39ff14">
-            <a-text value="AREA 1" position="0 0.8 0" align="center" color="#000" scale="0.8 0.8 0.8"></a-text>
-        </a-box>
-        <a-box position="-3 0.5 -2" width="2" height="1" depth="2" color="#ff6b35">
-            <a-text value="AREA 2" position="0 0.8 0" align="center" color="#fff" scale="0.8 0.8 0.8"></a-text>
-        </a-box>
-        <a-box position="0 0.5 -6" width="2" height="1" depth="2" color="#4ecdc4">
-            <a-text value="AREA 3" position="0 0.8 0" align="center" color="#000" scale="0.8 0.8 0.8"></a-text>
-        </a-box>
-    </a-entity>
-    
-    <!-- Camera rig -->
-    <a-entity id="rig" position="0 1.6 2">
-        <a-camera wasd-controls-enabled="false" 
-                  look-controls="enabled: true; reverseMouseDrag: false"
-                  fov="80">
+      <!-- LIGHTING -->
+      <a-entity light="type: directional; intensity: 1.2" position="2 4 3"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.7"></a-entity>
+
+      <!-- MINE MODEL -->
+      <a-entity gltf-model="mine_ar_map.glb"
+                id="mine"
+                position="0 0 -8"
+                scale="6 6 6"
+                rotation="0 20 0">
+      </a-entity>
+
+      <!-- MARKERS (Clickable Zones) -->
+      <a-entity id="zone1" geometry="primitive: sphere; radius: 0.3"
+                material="color: #ff4444; opacity: 0.8"
+                position="2 1 -6"
+                class="clickable">
+        <a-text value="Zone 1: High Risk"
+                align="center"
+                color="#fff"
+                position="0 0.6 0"
+                width="4"></a-text>
+      </a-entity>
+
+      <a-entity id="zone2" geometry="primitive: sphere; radius: 0.3"
+                material="color: #44ff44; opacity: 0.8"
+                position="-1 2 -5"
+                class="clickable">
+        <a-text value="Zone 2: Safe Area"
+                align="center"
+                color="#fff"
+                position="0 0.6 0"
+                width="4"></a-text>
+      </a-entity>
+
+      <!-- CAMERA + CONTROLS -->
+      <a-entity id="rig" position="0 2 5">
+        <a-camera orbit-controls="
+          autoRotate: false;
+          target: 0 0 -8;
+          minDistance: 3;
+          maxDistance: 20;">
         </a-camera>
-    </a-entity>
-    
-</a-scene>
+      </a-entity>
 
-<!-- UI -->
-<div id="status">
-    <div class="log info">🚀 Mine VR loading from GitHub...</div>
-</div>
-
-<div id="map">
-    <h3>⛏️ Mine Areas</h3>
-    <div>
-        <span class="marker" data-zone="1">1</span>Loading Bay<br>
-        <span class="marker" data-zone="2">2</span>Excavation<br>
-        <span class="marker" data-zone="3">3</span>Control Hub
-    </div>
-</div>
-
-<div id="joystick"></div>
-
-<div id="github-info">
-    📁 Loading: mine_ar_map.glb<br>
-    🌐 GitHub Pages Ready
-</div>
-
-<script>
-(function() {
-    'use strict';
-    
-    const rig = document.querySelector('#rig');
-    const statusEl = document.querySelector('#status');
-    const mineEl = document.querySelector('#mine');
-    const fallbackEl = document.querySelector('#fallback');
-    
-    let modelLoaded = false;
-    let moveX = 0, moveZ = 0;
-    
-    // Enhanced logging
-    function log(message, type = 'info') {
-        const div = document.createElement('div');
-        div.className = `log ${type}`;
-        div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-        statusEl.appendChild(div);
-        
-        // Auto-scroll and limit
-        statusEl.scrollTop = statusEl.scrollHeight;
-        while (statusEl.children.length > 25) {
-            statusEl.removeChild(statusEl.firstChild);
-        }
-        
-        console.log(`[Mine VR] ${message}`);
-    }
-    
-    // Model loading handlers
-    mineEl.addEventListener('model-loaded', (evt) => {
-        modelLoaded = true;
-        log('✅ GLB model loaded successfully!', 'ok');
-        log('🎯 Your Sketchfab model is now visible', 'ok');
-        
-        try {
-            const model = evt.detail.model;
-            if (model) {
-                // Get model bounds
-                const box = new THREE.Box3().setFromObject(model);
-                const size = box.getSize(new THREE.Vector3());
-                const maxDim = Math.max(size.x, size.y, size.z);
-                
-                log(`📏 Model size: ${size.x.toFixed(1)} × ${size.y.toFixed(1)} × ${size.z.toFixed(1)} units`, 'info');
-                
-                // Auto-scale if needed
-                if (maxDim > 20) {
-                    const scale = 15 / maxDim;
-                    mineEl.setAttribute('scale', `${scale} ${scale} ${scale}`);
-                    log(`🔧 Auto-scaled by ${scale.toFixed(2)}x (was too large)`, 'info');
-                } else if (maxDim < 1) {
-                    const scale = 5 / maxDim;
-                    mineEl.setAttribute('scale', `${scale} ${scale} ${scale}`);
-                    log(`🔧 Auto-scaled by ${scale.toFixed(2)}x (was too small)`, 'info');
-                }
-                
-                // Enhance materials
-                model.traverse((node) => {
-                    if (node.isMesh) {
-                        if (node.material) {
-                            node.material.side = THREE.DoubleSide;
-                            node.material.needsUpdate = true;
-                        }
-                        node.castShadow = true;
-                        node.receiveShadow = true;
-                    }
-                });
-                
-                log('🎨 Enhanced model materials and shadows', 'ok');
-            }
-        } catch (error) {
-            log(`⚠️ Model enhancement error: ${error.message}`, 'warn');
-        }
-    });
-    
-    mineEl.addEventListener('model-error', (evt) => {
-        log('❌ Failed to load mine_ar_map.glb', 'error');
-        log('💡 Showing fallback content instead', 'warn');
-        log('🔍 Check: File exists, GitHub Pages enabled, correct filename', 'info');
-        
-        // Show fallback
-        fallbackEl.setAttribute('visible', 'true');
-        
-        // GitHub-specific tips
-        setTimeout(() => {
-            log('📋 GitHub troubleshooting:', 'info');
-            log('  • File must be in repository root', 'info');
-            log('  • GitHub Pages must be enabled', 'info');
-            log('  • File name is case-sensitive', 'info');
-            log('  • Large files (>25MB) need Git LFS', 'info');
-        }, 2000);
-    });
-    
-    // Timeout handler
-    setTimeout(() => {
-        if (!modelLoaded) {
-            log('⏰ Model loading timeout (30s)', 'warn');
-            log('🔧 Check browser console for network errors', 'warn');
-            fallbackEl.setAttribute('visible', 'true');
-        }
-    }, 30000);
-    
-    // Joystick setup
-    if (window.nipplejs) {
-        const joystick = nipplejs.create({
-            zone: document.getElementById('joystick'),
-            mode: 'static',
-            position: { left: '50%', top: '50%' },
-            color: '#39ff14',
-            size: 80,
-            restOpacity: 0.7
+      <!-- INTERACTIVITY SCRIPT -->
+      <script>
+        document.querySelectorAll('.clickable').forEach(el => {
+          el.addEventListener('click', () => {
+            alert("You clicked on " + el.id + "!");
+          });
         });
-        
-        joystick.on('start', () => log('🕹️ Movement started', 'info'));
-        
-        joystick.on('move', (evt, data) => {
-            if (!data) return;
-            const angle = data.angle.radian;
-            const force = Math.min(data.force, 2.5);
-            moveX = Math.sin(angle) * force * 0.035;
-            moveZ = -Math.cos(angle) * force * 0.035;
-        });
-        
-        joystick.on('end', () => {
-            moveX = 0;
-            moveZ = 0;
-            log('🛑 Movement stopped', 'info');
-        });
-        
-        log('🎮 Touch joystick initialized', 'ok');
-    } else {
-        log('❌ Joystick library failed to load', 'error');
-    }
-    
-    // Movement loop
-    function updateMovement() {
-        if (moveX !== 0 || moveZ !== 0) {
-            const pos = rig.getAttribute('position');
-            const newPos = {
-                x: (pos.x || 0) + moveX,
-                y: pos.y || 1.6,
-                z: (pos.z || 0) + moveZ
-            };
-            
-            // Boundary limits
-            newPos.x = Math.max(-25, Math.min(25, newPos.x));
-            newPos.z = Math.max(-30, Math.min(15, newPos.z));
-            
-            rig.setAttribute('position', newPos);
-        }
-        requestAnimationFrame(updateMovement);
-    }
-    updateMovement();
-    
-    // Map teleportation
-    document.querySelectorAll('.marker').forEach(marker => {
-        marker.addEventListener('click', () => {
-            const zone = parseInt(marker.getAttribute('data-zone'));
-            teleportToZone(zone);
-        });
-    });
-    
-    function teleportToZone(zone) {
-        const positions = {
-            1: { x: 4, y: 2, z: -6 },   // Loading Bay
-            2: { x: -4, y: 2, z: -10 }, // Excavation  
-            3: { x: 0, y: 3, z: -15 }   // Control Hub
-        };
-        
-        const target = positions[zone];
-        if (target) {
-            // Smooth teleport
-            const current = rig.getAttribute('position');
-            const duration = 800;
-            const start = performance.now();
-            
-            function animate(now) {
-                const progress = Math.min((now - start) / duration, 1);
-                const eased = 1 - Math.pow(1 - progress, 3); // Ease out cubic
-                
-                const pos = {
-                    x: current.x + (target.x - current.x) * eased,
-                    y: current.y + (target.y - current.y) * eased,
-                    z: current.z + (target.z - current.z) * eased
-                };
-                
-                rig.setAttribute('position', pos);
-                
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    log(`✅ Teleported to zone ${zone}`, 'ok');
-                }
-            }
-            
-            requestAnimationFrame(animate);
-            log(`🎯 Teleporting to zone ${zone}...`, 'info');
-        }
-    }
-    
-    // Initial logs
-    log('🌐 GitHub Pages VR environment ready', 'ok');
-    log('🔄 Attempting to load mine_ar_map.glb...', 'info');
-    log('📱 Use joystick to move, click map to teleport', 'info');
-    
-    // Expose debug functions
-    window.mineVR = {
-        teleportToZone,
-        log,
-        modelLoaded: () => modelLoaded,
-        rig
-    };
-    
-})();
-</script>
+      </script>
 
-</body>
+    </a-scene>
+  </body>
 </html>
