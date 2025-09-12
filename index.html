@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Mine VR</title>
+  <title>Mine VR with Annotations</title>
   <style>
     body { margin:0; overflow:hidden; }
     canvas { display:block; }
@@ -12,10 +12,21 @@
       color:white; padding:10px; border-radius:8px; 
       font-family:sans-serif; 
     }
+    #tooltip {
+      position:absolute;
+      background:rgba(0,0,0,0.8);
+      color:#fff;
+      padding:5px 10px;
+      border-radius:5px;
+      font-size:14px;
+      display:none;
+      pointer-events:none;
+    }
   </style>
 </head>
 <body>
 <div id="overlay">Loading mine model...</div>
+<div id="tooltip"></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -42,38 +53,60 @@ let dir = new THREE.DirectionalLight(0xffffff, 0.8);
 dir.position.set(5, 10, 7.5);
 scene.add(dir);
 
+// Tooltip
+const tooltip = document.getElementById("tooltip");
+
+// Example Annotations (replace with your Sketchfab zones)
+const annotations = [
+  { name: "Excavation Zone", pos: [0, 1, 0] },
+  { name: "Drilling Area", pos: [2, 0.5, -1] },
+  { name: "Transport Road", pos: [-1, 0.8, 2] }
+];
+
+let markers = [];
+
 // Load Model
 const loader = new THREE.GLTFLoader();
 loader.load("mine_ar_map.glb", function(gltf) {
     let model = gltf.scene;
-    model.scale.set(10, 10, 10); // adjust scale
-    model.position.set(0, 0, 0); // center
+    model.scale.set(10, 10, 10);
+    model.position.set(0, 0, 0);
     scene.add(model);
     document.getElementById("overlay").style.display = "none";
 
-    // Example clickable marker
+    // Add markers for annotations
     let markerGeom = new THREE.SphereGeometry(0.1, 16, 16);
-    let markerMat = new THREE.MeshBasicMaterial({color:0xff0000});
-    let marker = new THREE.Mesh(markerGeom, markerMat);
-    marker.position.set(0, 1, 0);
-    scene.add(marker);
-
-    marker.userData = {name: "Excavation Zone"};
+    let markerMat = new THREE.MeshBasicMaterial({color:0xff4444});
     
-    window.addEventListener("click", (event)=>{
-        let mouse = new THREE.Vector2(
-            (event.clientX / window.innerWidth) * 2 - 1,
-            -(event.clientY / window.innerHeight) * 2 + 1
-        );
-        let raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(mouse, camera);
-        let intersects = raycaster.intersectObjects([marker]);
-        if(intersects.length > 0){
-            alert("Clicked: " + intersects[0].object.userData.name);
-        }
+    annotations.forEach(a => {
+        let m = new THREE.Mesh(markerGeom, markerMat.clone());
+        m.position.set(...a.pos);
+        m.userData = {name:a.name};
+        scene.add(m);
+        markers.push(m);
     });
 
 }, undefined, function(error){ console.error(error); });
+
+// Click detection
+window.addEventListener("click", (event)=>{
+    let mouse = new THREE.Vector2(
+        (event.clientX / window.innerWidth) * 2 - 1,
+        -(event.clientY / window.innerHeight) * 2 + 1
+    );
+    let raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    let intersects = raycaster.intersectObjects(markers);
+    if(intersects.length > 0){
+        let obj = intersects[0].object;
+        tooltip.innerText = obj.userData.name;
+        tooltip.style.display = "block";
+        tooltip.style.left = (event.clientX + 10) + "px";
+        tooltip.style.top = (event.clientY - 20) + "px";
+    } else {
+        tooltip.style.display = "none";
+    }
+});
 
 function animate(){
     renderer.setAnimationLoop(()=>{ 
