@@ -8,48 +8,96 @@
       renderer="colorManagement: true; physicallyCorrectLights: true; toneMapping: ACESFilmic; exposure: 1.2; antialias: true"
       background="color: #111">
 
-      <!-- SKY (dark premium gradient) -->
+      <!-- SKY -->
       <a-sky color="#0a0a0a"></a-sky>
 
       <!-- LIGHTING -->
       <a-entity light="type: directional; intensity: 1.5; castShadow: true;" position="3 6 5"></a-entity>
       <a-entity light="type: ambient; intensity: 0.6; color: #ffffff"></a-entity>
 
-      <!-- GROUND PLANE for soft reflection -->
+      <!-- GROUND -->
       <a-plane rotation="-90 0 0" width="50" height="50" color="#222" shadow="receive: true"></a-plane>
 
       <!-- CENTERED MINE MODEL -->
       <a-entity id="mine"
         gltf-model="mine_ar_map.glb"
         position="0 0 -6"
-        scale="6 6 6"
+        scale="3 3 3"
         rotation="0 30 0"
         shadow="cast: true; receive: true">
       </a-entity>
 
-      <!-- CAMERA + CONTROLS -->
-      <a-entity id="rig" position="0 1.6 4">
-        <a-camera wasd-controls-enabled="false" look-controls="true"></a-camera>
+      <!-- ZONE MARKERS -->
+      <a-entity id="zone1" geometry="primitive: sphere; radius: 0.2"
+        material="color: #ff4444; emissive: #ff0000; emissiveIntensity: 0.8"
+        position="-1 1 -5"
+        class="clickable"
+        zone-data="Zone 1 | Risk: High | Escape Time: 2 min">
       </a-entity>
 
-      <!-- SIMPLE KEYBOARD JOYSTICK -->
+      <a-entity id="zone2" geometry="primitive: sphere; radius: 0.2"
+        material="color: #44ff44; emissive: #00ff00; emissiveIntensity: 0.8"
+        position="1 0.5 -7"
+        class="clickable"
+        zone-data="Zone 2 | Risk: Medium | Escape Time: 4 min">
+      </a-entity>
+
+      <a-entity id="zone3" geometry="primitive: sphere; radius: 0.2"
+        material="color: #4444ff; emissive: #0000ff; emissiveIntensity: 0.8"
+        position="0 1.5 -8"
+        class="clickable"
+        zone-data="Zone 3 | Risk: Low | Escape Time: 7 min">
+      </a-entity>
+
+      <!-- POPUP UI (HTML overlay) -->
+      <div id="popup" style="
+        display: none;
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(20,20,20,0.95);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        font-family: sans-serif;
+        font-size: 14px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.5);
+      "></div>
+
+      <!-- CAMERA -->
+      <a-entity id="rig" position="0 1.6 4">
+        <a-camera></a-camera>
+      </a-entity>
+
+      <!-- CONTROLS + INTERACTIONS -->
       <script>
+        // Joystick movement
         AFRAME.registerComponent("joystick-controls", {
           init: function () {
             let rig = document.querySelector("#rig");
             window.addEventListener("keydown", (e) => {
               let pos = rig.getAttribute("position");
-              if (e.key === "ArrowUp") pos.z -= 0.3;   // forward
-              if (e.key === "ArrowDown") pos.z += 0.3; // back
-              if (e.key === "ArrowLeft") pos.x -= 0.3; // left
-              if (e.key === "ArrowRight") pos.x += 0.3; // right
+              if (e.key === "ArrowUp") pos.z -= 0.3;
+              if (e.key === "ArrowDown") pos.z += 0.3;
+              if (e.key === "ArrowLeft") pos.x -= 0.3;
+              if (e.key === "ArrowRight") pos.x += 0.3;
               rig.setAttribute("position", pos);
             });
           }
         });
         document.querySelector("#rig").setAttribute("joystick-controls", "");
-      </script>
 
+        // Zone Click Events
+        document.querySelectorAll(".clickable").forEach(zone => {
+          zone.addEventListener("click", () => {
+            let popup = document.getElementById("popup");
+            popup.innerText = zone.getAttribute("zone-data");
+            popup.style.display = "block";
+            setTimeout(() => popup.style.display = "none", 4000);
+          });
+        });
+      </script>
     </a-scene>
   </body>
 </html>
