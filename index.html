@@ -18,14 +18,10 @@
         rotation="0 30 0">
       </a-entity>
 
-      <!-- Example clickable ZONES -->
-      <a-box id="zone1" position="-1 0 -6" depth="1" height="1" width="1" color="red" opacity="0.5"></a-box>
-      <a-box id="zone2" position="2 0 -7" depth="1" height="1" width="1" color="blue" opacity="0.5"></a-box>
-
       <!-- INFO PANEL -->
       <a-entity id="infoPanel" visible="false" position="0 2 -3">
-        <a-plane width="2.5" height="1.2" color="black" opacity="0.8"></a-plane>
-        <a-text id="infoText" value="Zone info here" color="white" wrap-count="30" align="center" position="0 0 0.1"></a-text>
+        <a-plane width="2.8" height="1.2" color="black" opacity="0.75" material="shader: flat"></a-plane>
+        <a-text id="infoText" value="" color="white" wrap-count="36" align="center" position="0 0 0.05"></a-text>
       </a-entity>
 
       <!-- CAMERA -->
@@ -34,26 +30,26 @@
       </a-entity>
 
       <script>
-        // Info database
-        const zoneInfo = {
-          zone1: "Zone 1 has 10% gas leakage risk. Escape time: 3 mins.",
-          zone2: "Zone 2 has 15% rockfall chances. Escape time: 5 mins."
-        };
+        // Example zone info (short quick facts)
+        const zoneInfo = [
+          "Zone 1: 10% gas leakage risk, escape time 3 mins.",
+          "Zone 2: 15% rockfall chance, escape time 5 mins.",
+          "Zone 3: Safe zone, no hazards detected."
+        ];
 
-        // Click listener for zones
-        document.querySelectorAll("#zone1, #zone2").forEach(zone => {
-          zone.addEventListener("click", function () {
-            let panel = document.querySelector("#infoPanel");
-            let text = document.querySelector("#infoText");
-            text.setAttribute("value", zoneInfo[this.id]); // set info text
-            panel.setAttribute("visible", "true");
-          });
-        });
+        let current = 0;
+        const panel = document.querySelector("#infoPanel");
+        const text = document.querySelector("#infoText");
 
-        // Hide info panel if user presses ESC
+        // Show panel with next info when SPACE is pressed
         window.addEventListener("keydown", (e) => {
+          if (e.key === " ") {
+            text.setAttribute("value", zoneInfo[current]);
+            panel.setAttribute("visible", "true");
+            current = (current + 1) % zoneInfo.length; // cycle through info
+          }
           if (e.key === "Escape") {
-            document.querySelector("#infoPanel").setAttribute("visible", "false");
+            panel.setAttribute("visible", "false");
           }
         });
       </script>
