@@ -1,66 +1,92 @@
-<html>
-  <head>
-    <title>SafeKhadaan VR Dashboard</title>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-orbit-controls@1.3.0/dist/aframe-orbit-controls.min.js"></script>
-  </head>
-  <body>
-    <a-scene background="color: #111">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mine VR</title>
+  <style>
+    body { margin:0; overflow:hidden; }
+    canvas { display:block; }
+    #overlay { 
+      position:absolute; top:10px; left:10px; 
+      background:rgba(0,0,0,0.6); 
+      color:white; padding:10px; border-radius:8px; 
+      font-family:sans-serif; 
+    }
+  </style>
+</head>
+<body>
+<div id="overlay">Loading mine model...</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/webxr/VRButton.js"></script>
 
-      <!-- LIGHTING -->
-      <a-entity light="type: directional; intensity: 1.2" position="2 4 3"></a-entity>
-      <a-entity light="type: ambient; intensity: 0.7"></a-entity>
+<script>
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 5000);
+camera.position.set(0, 2, 5);
 
-      <!-- MINE MODEL -->
-      <a-entity gltf-model="mine_ar_map.glb"
-                id="mine"
-                position="0 0 -8"
-                scale="6 6 6"
-                rotation="0 20 0">
-      </a-entity>
+let renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.xr.enabled = true;
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+document.body.appendChild(renderer.domElement);
+document.body.appendChild(VRButton.createButton(renderer));
 
-      <!-- MARKERS (Clickable Zones) -->
-      <a-entity id="zone1" geometry="primitive: sphere; radius: 0.3"
-                material="color: #ff4444; opacity: 0.8"
-                position="2 1 -6"
-                class="clickable">
-        <a-text value="Zone 1: High Risk"
-                align="center"
-                color="#fff"
-                position="0 0.6 0"
-                width="4"></a-text>
-      </a-entity>
+let controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-      <a-entity id="zone2" geometry="primitive: sphere; radius: 0.3"
-                material="color: #44ff44; opacity: 0.8"
-                position="-1 2 -5"
-                class="clickable">
-        <a-text value="Zone 2: Safe Area"
-                align="center"
-                color="#fff"
-                position="0 0.6 0"
-                width="4"></a-text>
-      </a-entity>
+// Lights
+let hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+scene.add(hemi);
+let dir = new THREE.DirectionalLight(0xffffff, 0.8);
+dir.position.set(5, 10, 7.5);
+scene.add(dir);
 
-      <!-- CAMERA + CONTROLS -->
-      <a-entity id="rig" position="0 2 5">
-        <a-camera orbit-controls="
-          autoRotate: false;
-          target: 0 0 -8;
-          minDistance: 3;
-          maxDistance: 20;">
-        </a-camera>
-      </a-entity>
+// Load Model
+const loader = new THREE.GLTFLoader();
+loader.load("mine_ar_map.glb", function(gltf) {
+    let model = gltf.scene;
+    model.scale.set(10, 10, 10); // adjust scale
+    model.position.set(0, 0, 0); // center
+    scene.add(model);
+    document.getElementById("overlay").style.display = "none";
 
-      <!-- INTERACTIVITY SCRIPT -->
-      <script>
-        document.querySelectorAll('.clickable').forEach(el => {
-          el.addEventListener('click', () => {
-            alert("You clicked on " + el.id + "!");
-          });
-        });
-      </script>
+    // Example clickable marker
+    let markerGeom = new THREE.SphereGeometry(0.1, 16, 16);
+    let markerMat = new THREE.MeshBasicMaterial({color:0xff0000});
+    let marker = new THREE.Mesh(markerGeom, markerMat);
+    marker.position.set(0, 1, 0);
+    scene.add(marker);
 
-    </a-scene>
-  </body>
+    marker.userData = {name: "Excavation Zone"};
+    
+    window.addEventListener("click", (event)=>{
+        let mouse = new THREE.Vector2(
+            (event.clientX / window.innerWidth) * 2 - 1,
+            -(event.clientY / window.innerHeight) * 2 + 1
+        );
+        let raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, camera);
+        let intersects = raycaster.intersectObjects([marker]);
+        if(intersects.length > 0){
+            alert("Clicked: " + intersects[0].object.userData.name);
+        }
+    });
+
+}, undefined, function(error){ console.error(error); });
+
+function animate(){
+    renderer.setAnimationLoop(()=>{ 
+        renderer.render(scene, camera);
+    });
+}
+animate();
+
+window.addEventListener("resize", ()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
 </html>
