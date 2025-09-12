@@ -20,8 +20,8 @@
 
       <!-- INFO PANEL -->
       <a-entity id="infoPanel" position="0 2 -3">
-        <a-plane width="2.8" height="1.2" color="black" opacity="0.75" material="shader: flat"></a-plane>
-        <a-text id="infoText" value="Press SPACE to cycle hazard info" 
+        <a-plane width="3" height="1.5" color="black" opacity="0.75" material="shader: flat"></a-plane>
+        <a-text value="Zone 2: 15% rockfall risk\nEscape time: 5 mins\nStatus: Moderate hazard"
                 color="white" wrap-count="36" align="center" position="0 0 0.05">
         </a-text>
       </a-entity>
@@ -30,26 +30,6 @@
       <a-entity id="rig" position="0 1.6 0">
         <a-camera></a-camera>
       </a-entity>
-
-      <script>
-        // Example zone info
-        const zoneInfo = [
-          "Zone 1: 10% gas leakage risk, escape time 3 mins.",
-          "Zone 2: 15% rockfall chance, escape time 5 mins.",
-          "Zone 3: Safe zone, no hazards detected."
-        ];
-
-        let current = 0;
-        const text = document.querySelector("#infoText");
-
-        // SPACE cycles through info
-        window.addEventListener("keydown", (e) => {
-          if (e.code === "Space") {
-            text.setAttribute("value", zoneInfo[current]);
-            current = (current + 1) % zoneInfo.length;
-          }
-        });
-      </script>
 
     </a-scene>
   </body>
