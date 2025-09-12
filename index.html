@@ -2,25 +2,21 @@
   <head>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js"></script>
   </head>
   <body>
     <a-scene background="color: #0b0b0c">
 
-      <!-- GLOBAL LIGHTING -->
-      <a-entity light="type: hemisphere; color: #ffffff; groundColor: #555555; intensity: 1.2"></a-entity>
-      <a-entity light="type: directional; intensity: 0.8" position="2 4 2"></a-entity>
-      <a-entity light="type: ambient; intensity: 1.0; color: #cccccc"></a-entity>
-
-      <!-- ENVIRONMENT PRESET -->
-      <a-entity environment="preset: forest; lighting: distant; ground: flat; groundColor: #222"></a-entity>
+      <!-- LIGHTING (premium HDR style) -->
+      <a-entity light="type: hemisphere; color: #ffffff; groundColor: #333333; intensity: 1.2"></a-entity>
+      <a-entity light="type: directional; intensity: 0.9" position="3 6 2"></a-entity>
+      <a-entity light="type: ambient; intensity: 1; color: #bbbbbb"></a-entity>
 
       <!-- MINE MODEL -->
       <a-entity id="mine"
         gltf-model="mine_ar_map.glb"
-        position="0 0 -8"
-        scale="6 6 6"
-        rotation="0 30 0">
+        position="0 -1.2 -6"
+        scale="5 5 5"
+        rotation="0 20 0">
       </a-entity>
 
       <!-- CAMERA RIG -->
@@ -28,22 +24,56 @@
         <a-camera></a-camera>
       </a-entity>
 
-      <!-- JOYSTICK CONTROL -->
+      <!-- FLOATING PREMIUM UI PANELS -->
+      <!-- Zone Buttons -->
+      <a-entity id="ui" position="1.5 2 -3">
+        <a-plane width="1.2" height="1.8" color="#111822" opacity="0.85" 
+                 material="shader: flat" radius="0.05"></a-plane>
+
+        <a-text value="⚠️ Zones" position="-0.45 0.75 0.01" 
+                color="#00ffae" width="2" font="mozillavr"></a-text>
+
+        <a-plane id="zone1" position="0 0.4 0.01" width="1" height="0.25" 
+                 color="#1a1f2d" opacity="0.95" class="clickable">
+          <a-text value="Zone 1: High Risk" align="center" color="#ff6363" position="0 0 0.01" width="2"></a-text>
+        </a-plane>
+
+        <a-plane id="zone2" position="0 0 0.01" width="1" height="0.25" 
+                 color="#1a1f2d" opacity="0.95" class="clickable">
+          <a-text value="Zone 2: Stable" align="center" color="#9cff8a" position="0 0 0.01" width="2"></a-text>
+        </a-plane>
+
+        <a-plane id="zone3" position="0 -0.4 0.01" width="1" height="0.25" 
+                 color="#1a1f2d" opacity="0.95" class="clickable">
+          <a-text value="Zone 3: Gas Alert" align="center" color="#ffd966" position="0 0 0.01" width="2"></a-text>
+        </a-plane>
+      </a-entity>
+
+      <!-- Info Panel -->
+      <a-entity id="infoPanel" position="-1.5 2 -3">
+        <a-plane width="1.6" height="1.2" color="#111822" opacity="0.9" radius="0.05"></a-plane>
+        <a-text id="infoText" value="Select a zone to view risk details" 
+                color="#e6f7ee" position="-0.75 0.4 0.01" width="2"></a-text>
+      </a-entity>
+
+      <!-- INTERACTIVITY SCRIPT -->
       <script>
-        AFRAME.registerComponent("joystick-controls", {
-          init: function () {
-            let rig = document.querySelector("#rig");
-            window.addEventListener("keydown", (e) => {
-              let pos = rig.getAttribute("position");
-              if (e.key === "ArrowUp") pos.z -= 0.3;
-              if (e.key === "ArrowDown") pos.z += 0.3;
-              if (e.key === "ArrowLeft") pos.x -= 0.3;
-              if (e.key === "ArrowRight") pos.x += 0.3;
-              rig.setAttribute("position", pos);
-            });
-          }
+        const infoText = document.getElementById("infoText");
+
+        function setInfo(text, color){
+          infoText.setAttribute("value", text);
+          infoText.setAttribute("color", color);
+        }
+
+        document.querySelector("#zone1").addEventListener("click", ()=> {
+          setInfo("Zone 1: Rockfall probability 75%. Escape time: 2 mins", "#ff6363");
         });
-        document.querySelector("#rig").setAttribute("joystick-controls", "");
+        document.querySelector("#zone2").addEventListener("click", ()=> {
+          setInfo("Zone 2: Stable. No immediate risk.", "#9cff8a");
+        });
+        document.querySelector("#zone3").addEventListener("click", ()=> {
+          setInfo("Zone 3: Gas detected. Toxic level high.", "#ffd966");
+        });
       </script>
 
     </a-scene>
