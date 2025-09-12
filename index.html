@@ -1,32 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Mine VR with Annotations</title>
+  <meta charset="UTF-8">
+  <title>Mine VR Dashboard</title>
   <style>
-    body { margin:0; overflow:hidden; }
+    body { margin:0; overflow:hidden; font-family:sans-serif; }
     canvas { display:block; }
-    #overlay { 
-      position:absolute; top:10px; left:10px; 
-      background:rgba(0,0,0,0.6); 
-      color:white; padding:10px; border-radius:8px; 
-      font-family:sans-serif; 
+    #infoPanel {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 250px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      padding: 15px;
+      border-radius: 10px;
     }
-    #tooltip {
-      position:absolute;
-      background:rgba(0,0,0,0.8);
-      color:#fff;
-      padding:5px 10px;
-      border-radius:5px;
-      font-size:14px;
-      display:none;
-      pointer-events:none;
+    #infoPanel h2 { font-size: 16px; margin: 0 0 10px; }
+    .btn {
+      display: block;
+      margin: 5px 0;
+      padding: 8px;
+      background: #22cc88;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 14px;
     }
+    .btn:hover { background: #11aa66; }
   </style>
 </head>
 <body>
-<div id="overlay">Loading mine model...</div>
-<div id="tooltip"></div>
+<div id="infoPanel">
+  <h2>Mine Zones</h2>
+  <button class="btn" onclick="showZone('Excavation Zone', 'High Risk', 'Escape Time: 2 min')">Excavation Zone</button>
+  <button class="btn" onclick="showZone('Drilling Area', 'Moderate Risk', 'Escape Time: 4 min')">Drilling Area</button>
+  <button class="btn" onclick="showZone('Transport Road', 'Low Risk', 'Escape Time: 6 min')">Transport Road</button>
+  <div id="zoneDetails" style="margin-top:15px;"></div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -35,81 +49,42 @@
 <script>
 let scene = new THREE.Scene();
 let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 5000);
-camera.position.set(0, 2, 5);
+camera.position.set(0, 2, 8);
 
 let renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 document.body.appendChild(renderer.domElement);
 document.body.appendChild(VRButton.createButton(renderer));
 
 let controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-// Lights
+// Lighting
 let hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
 scene.add(hemi);
-let dir = new THREE.DirectionalLight(0xffffff, 0.8);
+let dir = new THREE.DirectionalLight(0xffffff, 1);
 dir.position.set(5, 10, 7.5);
 scene.add(dir);
 
-// Tooltip
-const tooltip = document.getElementById("tooltip");
-
-// Example Annotations (replace with your Sketchfab zones)
-const annotations = [
-  { name: "Excavation Zone", pos: [0, 1, 0] },
-  { name: "Drilling Area", pos: [2, 0.5, -1] },
-  { name: "Transport Road", pos: [-1, 0.8, 2] }
-];
-
-let markers = [];
-
-// Load Model
-const loader = new THREE.GLTFLoader();
-loader.load("mine_ar_map.glb", function(gltf) {
+// Load mine model
+let loader = new THREE.GLTFLoader();
+loader.load("the_bingham_canyon_mine_-_utah.glb", function(gltf){
     let model = gltf.scene;
-    model.scale.set(10, 10, 10);
-    model.position.set(0, 0, 0);
+    model.scale.set(10, 10, 10); // adjust scale for visibility
+    model.position.set(0, -1, 0); 
     scene.add(model);
-    document.getElementById("overlay").style.display = "none";
+}, undefined, function(e){ console.error(e); });
 
-    // Add markers for annotations
-    let markerGeom = new THREE.SphereGeometry(0.1, 16, 16);
-    let markerMat = new THREE.MeshBasicMaterial({color:0xff4444});
-    
-    annotations.forEach(a => {
-        let m = new THREE.Mesh(markerGeom, markerMat.clone());
-        m.position.set(...a.pos);
-        m.userData = {name:a.name};
-        scene.add(m);
-        markers.push(m);
-    });
-
-}, undefined, function(error){ console.error(error); });
-
-// Click detection
-window.addEventListener("click", (event)=>{
-    let mouse = new THREE.Vector2(
-        (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1
-    );
-    let raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, camera);
-    let intersects = raycaster.intersectObjects(markers);
-    if(intersects.length > 0){
-        let obj = intersects[0].object;
-        tooltip.innerText = obj.userData.name;
-        tooltip.style.display = "block";
-        tooltip.style.left = (event.clientX + 10) + "px";
-        tooltip.style.top = (event.clientY - 20) + "px";
-    } else {
-        tooltip.style.display = "none";
-    }
-});
+function showZone(name, risk, escape) {
+    document.getElementById("zoneDetails").innerHTML = `
+      <strong>${name}</strong><br>
+      Risk Level: ${risk}<br>
+      ${escape}
+    `;
+}
 
 function animate(){
-    renderer.setAnimationLoop(()=>{ 
+    renderer.setAnimationLoop(()=>{
         renderer.render(scene, camera);
     });
 }
