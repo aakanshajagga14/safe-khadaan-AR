@@ -1,100 +1,147 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Mine VR Dashboard</title>
+  <meta charset="utf-8">
+  <title>SafeKhadaan — Model Load Debug</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { margin:0; overflow:hidden; font-family:sans-serif; }
-    canvas { display:block; }
-    #infoPanel {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 250px;
-      background: rgba(0,0,0,0.7);
-      color: #fff;
-      padding: 15px;
-      border-radius: 10px;
-    }
-    #infoPanel h2 { font-size: 16px; margin: 0 0 10px; }
-    .btn {
-      display: block;
-      margin: 5px 0;
-      padding: 8px;
-      background: #22cc88;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      text-align: left;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .btn:hover { background: #11aa66; }
+    body{margin:0;font-family:Inter,Arial;background:#0b0b0c;color:#e6f7ee}
+    #status{position:fixed;left:10px;top:10px;background:rgba(0,0,0,0.6);padding:12px;border-radius:8px;max-width:calc(100% - 40px)}
+    #canvasWrap{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
+    #log{white-space:pre-wrap;font-size:13px;color:#ffdfe0;margin-top:8px}
+    a{color:#8ef7bf}
   </style>
 </head>
 <body>
-<div id="infoPanel">
-  <h2>Mine Zones</h2>
-  <button class="btn" onclick="showZone('Excavation Zone', 'High Risk', 'Escape Time: 2 min')">Excavation Zone</button>
-  <button class="btn" onclick="showZone('Drilling Area', 'Moderate Risk', 'Escape Time: 4 min')">Drilling Area</button>
-  <button class="btn" onclick="showZone('Transport Road', 'Low Risk', 'Escape Time: 6 min')">Transport Road</button>
-  <div id="zoneDetails" style="margin-top:15px;"></div>
-</div>
+  <div id="status">
+    <div id="msg">Initializing loader…</div>
+    <div id="log"></div>
+  </div>
+  <div id="canvasWrap"><canvas id="c"></canvas></div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/webxr/VRButton.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/loaders/DRACOLoader.js"></script>
+  <script>
+  const logEl = document.getElementById('log');
+  function log(...t){ console.log(...t); logEl.textContent += Array.from(t).join(' ') + '\\n'; }
+  const msg = (s)=>document.getElementById('msg').textContent = s;
 
-<script>
-let scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 5000);
-camera.position.set(0, 2, 8);
+  // CONFIG: set the path to your uploaded glb (relative to this HTML file)
+  const MODEL_PATH = 'mine_ar_map.glb'; // <-- change if your file is in /assets/mine.glb etc.
 
-let renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.xr.enabled = true;
-document.body.appendChild(renderer.domElement);
-document.body.appendChild(VRButton.createButton(renderer));
+  // Fallback model (small) — used only to confirm the viewer works
+  const FALLBACK = 'https://rawcdn.githack.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb';
 
-let controls = new THREE.OrbitControls(camera, renderer.domElement);
+  // Basic three.js setup
+  const canvas = document.getElementById('c');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b0b0c);
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 2000);
+  camera.position.set(0,2,6);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
 
-// Lighting
-let hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-scene.add(hemi);
-let dir = new THREE.DirectionalLight(0xffffff, 1);
-dir.position.set(5, 10, 7.5);
-scene.add(dir);
+  // lights
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x222244, 1.0));
+  const d = new THREE.DirectionalLight(0xffffff, 0.8); d.position.set(5,10,7); scene.add(d);
 
-// Load mine model
-let loader = new THREE.GLTFLoader();
-loader.load("the_bingham_canyon_mine_-_utah.glb", function(gltf){
-    let model = gltf.scene;
-    model.scale.set(10, 10, 10); // adjust scale for visibility
-    model.position.set(0, -1, 0); 
-    scene.add(model);
-}, undefined, function(e){ console.error(e); });
+  // ground
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(200,200), new THREE.MeshBasicMaterial({color:0x222222}));
+  ground.rotation.x = -Math.PI/2; ground.position.y = -1.5; scene.add(ground);
 
-function showZone(name, risk, escape) {
-    document.getElementById("zoneDetails").innerHTML = `
-      <strong>${name}</strong><br>
-      Risk Level: ${risk}<br>
-      ${escape}
-    `;
-}
+  // GLTF loader + DRACO support
+  const dracoLoader = new THREE.DRACOLoader();
+  // CDN path for Draco decoder
+  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/'); // common CDN
+  const loader = new THREE.GLTFLoader();
+  loader.setDRACOLoader(dracoLoader);
 
-function animate(){
-    renderer.setAnimationLoop(()=>{
-        renderer.render(scene, camera);
-    });
-}
-animate();
+  let modelObject = null;
 
-window.addEventListener("resize", ()=>{
+  function attemptLoad(path){
+    msg('Loading: ' + path);
+    log('Attempting to load model from:', path);
+    loader.load(path,
+      (gltf)=>{
+        log('Model loaded OK:', path);
+        msg('Model loaded — rendering scene');
+        if (modelObject) scene.remove(modelObject);
+        modelObject = gltf.scene;
+        // auto-center and scale heuristics
+        // compute bounding box and re-center
+        const box = new THREE.Box3().setFromObject(modelObject);
+        const size = new THREE.Vector3(); box.getSize(size);
+        const center = new THREE.Vector3(); box.getCenter(center);
+        log('Model bbox size:', size.x.toFixed(2), size.y.toFixed(2), size.z.toFixed(2));
+        // normalize scale (target approx ~ 3 units height)
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scaleFactor = (maxDim > 0) ? (3.0 / maxDim) : 1.0;
+        modelObject.scale.setScalar(scaleFactor);
+        // center model at origin
+        modelObject.position.sub(center.multiplyScalar(scaleFactor));
+        modelObject.position.y += 0.5; // raise slightly above ground
+        scene.add(modelObject);
+        // nice camera framing
+        controls.target.set(0, 0.8, 0);
+        camera.position.set(0, 1.6 + Math.max(2, maxDim), Math.max(4, Math.max(4, maxDim)*2));
+      },
+      (xhr)=> {
+        // progress
+        const pct = xhr.total ? (xhr.loaded / xhr.total * 100).toFixed(0) : '??';
+        log('Loading progress: ' + pct + '%');
+      },
+      (err)=>{
+        log('Model load ERROR:', err && err.message ? err.message : err );
+        msg('Model load failed — check console & network');
+        // fallback test
+        if (path !== FALLBACK) {
+          log('Trying fallback model to verify viewer works...');
+          attemptLoad(FALLBACK);
+        }
+      }
+    );
+  }
+
+  // test whether your path exists quickly by requesting head
+  function checkURL(path){
+    fetch(path, { method: 'HEAD' })
+      .then(res=>{
+        log('HTTP HEAD', path, '=>', res.status);
+        if (res.ok) attemptLoad(path);
+        else {
+          log('HEAD failed; attempting direct GET to see error...');
+          attemptLoad(path); // loader will show error too
+        }
+      })
+      .catch(err=>{
+        log('HEAD request error (likely path/CORS):', err.message);
+        // still try loader (it will show clearer error)
+        attemptLoad(path);
+      });
+  }
+
+  // Start!
+  checkURL(MODEL_PATH);
+
+  // render loop
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', ()=> {
+    renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth/window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
-</script>
+  });
+  </script>
 </body>
 </html>
