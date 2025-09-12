@@ -19,9 +19,11 @@
       </a-entity>
 
       <!-- INFO PANEL -->
-      <a-entity id="infoPanel" visible="false" position="0 2 -3">
+      <a-entity id="infoPanel" position="0 2 -3">
         <a-plane width="2.8" height="1.2" color="black" opacity="0.75" material="shader: flat"></a-plane>
-        <a-text id="infoText" value="" color="white" wrap-count="36" align="center" position="0 0 0.05"></a-text>
+        <a-text id="infoText" value="Press SPACE to cycle hazard info" 
+                color="white" wrap-count="36" align="center" position="0 0 0.05">
+        </a-text>
       </a-entity>
 
       <!-- CAMERA -->
@@ -30,7 +32,7 @@
       </a-entity>
 
       <script>
-        // Example zone info (short quick facts)
+        // Example zone info
         const zoneInfo = [
           "Zone 1: 10% gas leakage risk, escape time 3 mins.",
           "Zone 2: 15% rockfall chance, escape time 5 mins.",
@@ -38,18 +40,13 @@
         ];
 
         let current = 0;
-        const panel = document.querySelector("#infoPanel");
         const text = document.querySelector("#infoText");
 
-        // Show panel with next info when SPACE is pressed
+        // SPACE cycles through info
         window.addEventListener("keydown", (e) => {
-          if (e.key === " ") {
+          if (e.code === "Space") {
             text.setAttribute("value", zoneInfo[current]);
-            panel.setAttribute("visible", "true");
-            current = (current + 1) % zoneInfo.length; // cycle through info
-          }
-          if (e.key === "Escape") {
-            panel.setAttribute("visible", "false");
+            current = (current + 1) % zoneInfo.length;
           }
         });
       </script>
