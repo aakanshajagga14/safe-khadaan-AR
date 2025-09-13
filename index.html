@@ -1,45 +1,37 @@
+<!doctype html>
 <html>
   <head>
+    <meta charset="utf-8" />
+    <title>SafeKhadaan — Static Camera VR</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
   </head>
   <body>
-    <a-scene background="color: black">
+    <a-scene background="color: #000000">
 
-      <!-- LIGHTING -->
-      <a-entity light="type: directional; intensity: 1" position="1 2 2"></a-entity>
+      <!-- Lighting -->
+      <a-entity light="type: hemisphere; color: #ffffff; groundColor: #333333; intensity: 1.0"></a-entity>
+      <a-entity light="type: directional; intensity: 0.9" position="3 6 2"></a-entity>
       <a-entity light="type: ambient; intensity: 0.6"></a-entity>
 
-      <!-- CENTERED + LOWERED MINE MODEL -->
+      <!-- Mine model (centered and lowered) -->
       <a-entity id="mine"
-        gltf-model="mine_ar_map.glb"
-        position="0 -3 -6"
-        scale="8 8 8"
-        rotation="0 25 0">
+                gltf-model="mine_ar_map.glb"
+                position="0 -3 -6"
+                scale="8 8 8"
+                rotation="0 25 0">
       </a-entity>
 
-      <!-- CAMERA + SMOOTH CONTROLS -->
+      <!-- Info panel (always visible) -->
+      <a-entity id="infoPanel" position="0 2 -3">
+        <a-plane width="3" height="1.2" color="#07070a" opacity="0.85" material="shader: flat"></a-plane>
+        <a-text value="Zone 2: 15% rockfall risk\nEscape time: 5 mins"
+                color="#ffffff" align="center" wrap-count="36" position="0 0 0.05"></a-text>
+      </a-entity>
+
+      <!-- Fixed camera: no joystick, no look-controls, no wasd -->
       <a-entity id="rig" position="0 1.6 0">
-        <a-camera wasd-controls-enabled="true" look-controls="true"></a-camera>
+        <a-camera look-controls="enabled: false" wasd-controls="enabled: false"></a-camera>
       </a-entity>
-
-      <!-- SIMPLE JOYSTICK CONTROL -->
-      <script>
-        AFRAME.registerComponent("joystick-controls", {
-          init: function () {
-            let rig = document.querySelector("#rig");
-            window.addEventListener("keydown", (e) => {
-              let pos = rig.getAttribute("position");
-              if (e.key === "ArrowUp") pos.z -= 0.2;   // forward
-              if (e.key === "ArrowDown") pos.z += 0.2; // back
-              if (e.key === "ArrowLeft") pos.x -= 0.2; // left
-              if (e.key === "ArrowRight") pos.x += 0.2; // right
-              rig.setAttribute("position", pos);
-            });
-          }
-        });
-        document.querySelector("#rig").setAttribute("joystick-controls", "");
-      </script>
 
     </a-scene>
   </body>
