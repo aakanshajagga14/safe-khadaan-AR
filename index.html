@@ -50,14 +50,14 @@
 
       <!-- DESKTOP CAMERA (with orbit controls) -->
       <a-entity id="desktopRig" 
-        position="0 8000 8"
+        position="0 5 8"
         visible="false">
         <a-camera 
           id="desktopCamera"
           look-controls="enabled: true; reverseMouseDrag: false"
           wasd-controls="enabled: true; acceleration: 30"
           orbit-controls="
-            target: 0 0 -8; 
+            target: 0 -3 -8; 
             enableDamping: true; 
             dampingFactor: 0.125;
             rotateSpeed: 0.25;
@@ -70,7 +70,7 @@
 
       <!-- VR CAMERA -->
       <a-entity id="vrRig" 
-        position="0 8000 3"
+        position="0 5 3"
         visible="true">
         <a-camera 
           id="vrCamera"
