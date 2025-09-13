@@ -1,36 +1,267 @@
+<!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
+    <title>VR/3D Model Viewer</title>
+    <meta name="description" content="VR and 3D Model Viewer">
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/supermedium/superframe@master/components/environment/dist/aframe-environment-component.min.js"></script>
   </head>
   <body>
-    <a-scene background="color: black">
+    <a-scene 
+      background="color: #001122"
+      vr-mode-ui="enabled: true"
+      device-orientation-permission-ui="enabled: true">
 
-      <!-- LIGHTING -->
-      <a-entity light="type: directional; intensity: 1" position="1 2 2"></a-entity>
-      <a-entity light="type: ambient; intensity: 0.5"></a-entity>
+      <!-- LIGHTING SETUP -->
+      <a-entity light="type: directional; intensity: 1.2; castShadow: true" position="5 8 5"></a-entity>
+      <a-entity light="type: directional; intensity: 0.8" position="-5 8 -5"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.4"></a-entity>
 
-      <!-- MINE MODEL -->
+      <!-- MAIN MODEL -->
       <a-entity id="mine"
         gltf-model="mine_ar_map.glb"
         position="0 0 -8"
         scale="6 6 6"
-        rotation="0 30 0">
+        rotation="0 30 0"
+        animation-mixer>
       </a-entity>
 
       <!-- INFO PANEL -->
-      <a-entity id="infoPanel" position="0 2 -3">
-        <a-plane width="3" height="1.5" color="black" opacity="0.75" material="shader: flat"></a-plane>
-        <a-text value="Zone 2: 15% rockfall risk\nEscape time: 5 mins\nStatus: Moderate hazard"
-                color="white" wrap-count="36" align="center" position="0 0 0.05">
+      <a-entity id="infoPanel" position="0 4 -3" visible="true">
+        <a-plane 
+          width="4" 
+          height="2" 
+          color="#000000" 
+          opacity="0.8" 
+          material="shader: flat"
+          geometry="primitive: plane">
+        </a-plane>
+        <a-text 
+          value="Zone 2: 15% rockfall risk&#10;Escape time: 5 mins&#10;Status: Moderate hazard"
+          color="white" 
+          wrap-count="40" 
+          align="center" 
+          position="0 0 0.05"
+          font="kelsonsans">
         </a-text>
       </a-entity>
 
-      <!-- CAMERA -->
-      <a-entity id="rig" position="0 1.6 0">
-        <a-camera></a-camera>
+      <!-- DESKTOP CAMERA (with orbit controls) -->
+      <a-entity id="desktopRig" 
+        position="0 5 8"
+        visible="false">
+        <a-camera 
+          id="desktopCamera"
+          look-controls="enabled: true; reverseMouseDrag: false"
+          wasd-controls="enabled: true; acceleration: 30"
+          orbit-controls="
+            target: 0 0 -8; 
+            enableDamping: true; 
+            dampingFactor: 0.125;
+            rotateSpeed: 0.25;
+            minDistance: 3;
+            maxDistance: 50;
+            autoRotate: false;
+            autoRotateSpeed: 1.0;">
+        </a-camera>
       </a-entity>
 
+      <!-- VR CAMERA -->
+      <a-entity id="vrRig" 
+        position="0 5 3"
+        visible="true">
+        <a-camera 
+          id="vrCamera"
+          look-controls="enabled: true"
+          wasd-controls="enabled: true; acceleration: 20">
+        </a-camera>
+        
+        <!-- VR CONTROLLERS -->
+        <a-entity 
+          id="leftHand"
+          hand-controls="hand: left; handModelStyle: lowPoly; color: #ffcccc"
+          laser-controls
+          raycaster="objects: .interactive"
+          line="color: red; opacity: 0.75">
+        </a-entity>
+        
+        <a-entity 
+          id="rightHand"
+          hand-controls="hand: right; handModelStyle: lowPoly; color: #ccffcc"
+          laser-controls
+          raycaster="objects: .interactive"
+          line="color: blue; opacity: 0.75">
+        </a-entity>
+      </a-entity>
+
+      <!-- GRID FLOOR FOR REFERENCE -->
+      <a-plane 
+        position="0 -2 -8" 
+        rotation="-90 0 0" 
+        width="50" 
+        height="50" 
+        color="#333333"
+        material="wireframe: true; opacity: 0.3">
+      </a-plane>
+
     </a-scene>
+
+    <script>
+      // Device detection and camera switching
+      function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      }
+
+      function isVRCapable() {
+        return 'xr' in navigator && 'isSessionSupported' in navigator.xr;
+      }
+
+      // Initialize the scene based on device
+      document.addEventListener('DOMContentLoaded', function() {
+        const scene = document.querySelector('a-scene');
+        const desktopRig = document.getElementById('desktopRig');
+        const vrRig = document.getElementById('vrRig');
+        const desktopCamera = document.getElementById('desktopCamera');
+        const vrCamera = document.getElementById('vrCamera');
+
+        if (isMobile()) {
+          // Mobile/VR setup
+          console.log('Mobile/VR mode detected');
+          desktopRig.setAttribute('visible', false);
+          vrRig.setAttribute('visible', true);
+          scene.setAttribute('camera', 'active: true');
+        } else {
+          // Desktop setup
+          console.log('Desktop mode detected');
+          desktopRig.setAttribute('visible', true);
+          vrRig.setAttribute('visible', false);
+          
+          // Add orbit controls for desktop
+          if (!desktopCamera.hasAttribute('orbit-controls')) {
+            desktopCamera.setAttribute('orbit-controls', {
+              target: '0 0 -8',
+              enableDamping: true,
+              dampingFactor: 0.125,
+              rotateSpeed: 0.25,
+              minDistance: 3,
+              maxDistance: 50,
+              autoRotate: false
+            });
+          }
+        }
+
+        // Scene loaded handler
+        scene.addEventListener('loaded', function() {
+          console.log('Scene loaded successfully');
+          
+          // Optional: Auto-rotate model
+          const model = document.getElementById('mine');
+          if (model) {
+            model.setAttribute('animation', {
+              property: 'rotation',
+              to: '0 390 0',
+              loop: true,
+              dur: 20000,
+              easing: 'linear'
+            });
+          }
+        });
+
+        // VR mode enter/exit handlers
+        scene.addEventListener('enter-vr', function() {
+          console.log('Entered VR mode');
+          desktopRig.setAttribute('visible', false);
+          vrRig.setAttribute('visible', true);
+        });
+
+        scene.addEventListener('exit-vr', function() {
+          console.log('Exited VR mode');
+          if (!isMobile()) {
+            desktopRig.setAttribute('visible', true);
+            vrRig.setAttribute('visible', false);
+          }
+        });
+
+        // Error handling
+        scene.addEventListener('componentremoved', function(evt) {
+          if (evt.detail.name === 'gltf-model') {
+            console.error('Model failed to load');
+          }
+        });
+      });
+
+      // Utility functions for position adjustment
+      function adjustModelPosition(x, y, z) {
+        const model = document.getElementById('mine');
+        if (model) {
+          model.setAttribute('position', `${x} ${y} ${z}`);
+          console.log(`Model position adjusted to: ${x}, ${y}, ${z}`);
+        }
+      }
+
+      function adjustModelRotation(x, y, z) {
+        const model = document.getElementById('mine');
+        if (model) {
+          model.setAttribute('rotation', `${x} ${y} ${z}`);
+          console.log(`Model rotation adjusted to: ${x}, ${y}, ${z}`);
+        }
+      }
+
+      function adjustModelScale(x, y, z) {
+        const model = document.getElementById('mine');
+        if (model) {
+          model.setAttribute('scale', `${x} ${y} ${z}`);
+          console.log(`Model scale adjusted to: ${x}, ${y}, ${z}`);
+        }
+      }
+
+      function adjustCameraPosition(x, y, z, isVR = false) {
+        const rig = isVR ? document.getElementById('vrRig') : document.getElementById('desktopRig');
+        if (rig) {
+          rig.setAttribute('position', `${x} ${y} ${z}`);
+          console.log(`${isVR ? 'VR' : 'Desktop'} camera position adjusted to: ${x}, ${y}, ${z}`);
+        }
+      }
+
+      // Example usage (uncomment to test):
+      // adjustModelPosition(0, 2, -8);  // Move model up 2 units
+      // adjustCameraPosition(0, 8, 10, false);  // Desktop camera higher and further back
+      // adjustCameraPosition(0, 6, 5, true);   // VR camera position
+    </script>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      
+      .info-overlay {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        z-index: 999;
+      }
+
+      /* VR button styling */
+      .a-enter-vr-button {
+        bottom: 20px;
+        right: 20px;
+      }
+    </style>
+
+    <!-- Info overlay for desktop users -->
+    <div class="info-overlay">
+      <strong>Controls:</strong><br>
+      Desktop: Mouse to orbit, WASD to move<br>
+      Mobile/VR: Look around and move naturally
+    </div>
+
   </body>
 </html>
