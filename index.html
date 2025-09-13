@@ -1,18 +1,46 @@
 <html>
   <head>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
   </head>
   <body>
-    <a-scene>
-      <!-- Load your GLB model -->
-      <a-entity 
-        gltf-model="url(mine_ar_map.glb)" 
-        scale="0.5 0.5 0.5" 
-        position="0 1 -3">
+    <a-scene background="color: black">
+
+      <!-- LIGHTING -->
+      <a-entity light="type: directional; intensity: 1" position="1 2 2"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.6"></a-entity>
+
+      <!-- CENTERED + LOWERED MINE MODEL -->
+      <a-entity id="mine"
+        gltf-model="mine_ar_map.glb"
+        position="0 -3 -6"
+        scale="8 8 8"
+        rotation="0 25 0">
       </a-entity>
-      
-      <!-- Environment -->
-      <a-sky color="#000"></a-sky>
+
+      <!-- CAMERA + SMOOTH CONTROLS -->
+      <a-entity id="rig" position="0 1.6 0">
+        <a-camera wasd-controls-enabled="true" look-controls="true"></a-camera>
+      </a-entity>
+
+      <!-- SIMPLE JOYSTICK CONTROL -->
+      <script>
+        AFRAME.registerComponent("joystick-controls", {
+          init: function () {
+            let rig = document.querySelector("#rig");
+            window.addEventListener("keydown", (e) => {
+              let pos = rig.getAttribute("position");
+              if (e.key === "ArrowUp") pos.z -= 0.2;   // forward
+              if (e.key === "ArrowDown") pos.z += 0.2; // back
+              if (e.key === "ArrowLeft") pos.x -= 0.2; // left
+              if (e.key === "ArrowRight") pos.x += 0.2; // right
+              rig.setAttribute("position", pos);
+            });
+          }
+        });
+        document.querySelector("#rig").setAttribute("joystick-controls", "");
+      </script>
+
     </a-scene>
   </body>
 </html>
