@@ -1,38 +1,18 @@
-<!doctype html>
 <html>
   <head>
-    <meta charset="utf-8" />
-    <title>SafeKhadaan — Static Camera VR</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   </head>
   <body>
-    <a-scene background="color: #000000">
-
-      <!-- Lighting -->
-      <a-entity light="type: hemisphere; color: #ffffff; groundColor: #333333; intensity: 1.0"></a-entity>
-      <a-entity light="type: directional; intensity: 0.9" position="3 6 2"></a-entity>
-      <a-entity light="type: ambient; intensity: 0.6"></a-entity>
-
-      <!-- Mine model (centered and lowered) -->
-      <a-entity id="mine"
-                gltf-model="mine_ar_map.glb"
-                position="0 -3 -6"
-                scale="8 8 8"
-                rotation="0 25 0">
+    <a-scene>
+      <!-- Load your GLB model -->
+      <a-entity 
+        gltf-model="url(mine_ar_map.glb)" 
+        scale="0.5 0.5 0.5" 
+        position="0 1 -3">
       </a-entity>
-
-      <!-- Info panel (always visible) -->
-      <a-entity id="infoPanel" position="0 2 -3">
-        <a-plane width="3" height="1.2" color="#07070a" opacity="0.85" material="shader: flat"></a-plane>
-        <a-text value="Zone 2: 15% rockfall risk\nEscape time: 5 mins"
-                color="#ffffff" align="center" wrap-count="36" position="0 0 0.05"></a-text>
-      </a-entity>
-
-      <!-- Fixed camera: no joystick, no look-controls, no wasd -->
-      <a-entity id="rig" position="0 1.6 0">
-        <a-camera look-controls="enabled: false" wasd-controls="enabled: false"></a-camera>
-      </a-entity>
-
+      
+      <!-- Environment -->
+      <a-sky color="#000"></a-sky>
     </a-scene>
   </body>
 </html>
