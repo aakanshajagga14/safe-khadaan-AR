@@ -1,42 +1,280 @@
+<!DOCTYPE html>
 <html>
   <head>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <style>
+      body { margin: 0; font-family: Arial, sans-serif; }
+      .controls {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 15px;
+        border-radius: 5px;
+        z-index: 1000;
+        font-size: 12px;
+      }
+      .control-group {
+        margin-bottom: 10px;
+      }
+      .control-group label {
+        display: inline-block;
+        width: 80px;
+        font-size: 11px;
+      }
+      .control-group input {
+        width: 60px;
+        margin-right: 5px;
+      }
+      button {
+        background: #333;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        margin: 2px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 11px;
+      }
+      button:hover { background: #555; }
+    </style>
   </head>
   <body>
-    <a-scene background="color: black">
+    <!-- Control Panel -->
+    <div class="controls">
+      <div><strong>Mine Model Alignment</strong></div>
+      <div class="control-group">
+        <label>Position:</label>
+        X: <input type="number" id="posX" value="0" step="0.5">
+        Y: <input type="number" id="posY" value="-1" step="0.5">
+        Z: <input type="number" id="posZ" value="-8" step="0.5">
+      </div>
+      <div class="control-group">
+        <label>Rotation:</label>
+        X: <input type="number" id="rotX" value="0" step="15">
+        Y: <input type="number" id="rotY" value="0" step="15">
+        Z: <input type="number" id="rotZ" value="0" step="15">
+      </div>
+      <div class="control-group">
+        <label>Scale:</label>
+        <input type="number" id="scale" value="4" step="0.5" min="0.1">
+        <button onclick="applyScale()">Apply</button>
+      </div>
+      <div class="control-group">
+        <button onclick="updateModel()">Update Position</button>
+        <button onclick="resetView()">Reset View</button>
+        <button onclick="toggleGrid()">Toggle Grid</button>
+      </div>
+      <div class="control-group">
+        <button onclick="centerModel()">Auto Center</button>
+        <button onclick="toggleWireframe()">Wireframe</button>
+      </div>
+    </div>
 
-      <!-- LIGHTING -->
-      <a-entity light="type: directional; intensity: 1" position="1 2 2"></a-entity>
-      <a-entity light="type: ambient; intensity: 0.5"></a-entity>
+    <a-scene background="color: #001122" vr-mode-ui="enabled: false">
+      <!-- ENHANCED LIGHTING -->
+      <a-entity light="type: directional; intensity: 0.8; castShadow: true" position="2 4 2"></a-entity>
+      <a-entity light="type: directional; intensity: 0.4" position="-2 2 2"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.4"></a-entity>
+      <a-entity light="type: point; intensity: 0.5; distance: 20" position="0 3 -5"></a-entity>
 
-      <!-- MINE MODEL -->
-      <a-entity id="mine"
-        gltf-model="mine_ar_map.glb"
-        position="0 -2 -5"   <!-- lowered 2 units and brought closer -->
-        scale="6 6 6"
-        rotation="0 30 0">
+      <!-- REFERENCE GRID (initially hidden) -->
+      <a-entity id="grid" visible="false">
+        <!-- Ground grid -->
+        <a-plane position="0 -2 -5" rotation="-90 0 0" width="20" height="20" 
+                 material="color: #333; wireframe: true; opacity: 0.3"></a-plane>
+        <!-- Axis helpers -->
+        <a-cylinder position="5 0 -5" radius="0.05" height="4" color="red" opacity="0.7"></a-cylinder>
+        <a-cylinder position="0 2 -5" radius="0.05" height="4" color="green" rotation="0 0 90" opacity="0.7"></a-cylinder>
+        <a-cylinder position="0 0 0" radius="0.05" height="4" color="blue" rotation="90 0 0" opacity="0.7"></a-cylinder>
       </a-entity>
 
-      <!-- RED DOT FOR ZONE 2 -->
-      <a-sphere id="zone2-marker"
-        position="1 2 -6"   <!-- adjust this to place above Zone 2 -->
-        radius="0.2"
-        material="color: red; emissive: red; emissiveIntensity: 1; shader: standard">
+      <!-- MINE MODEL with improved positioning -->
+      <a-entity id="mine"
+        gltf-model="mine_ar_map.glb"
+        position="0 -1 -8"
+        scale="4 4 4"
+        rotation="0 0 0"
+        shadow="cast: true; receive: true">
+        <!-- Bounding box helper (initially hidden) -->
+        <a-box id="boundingBox" 
+               position="0 0 0" 
+               width="2" height="2" depth="2" 
+               material="color: yellow; wireframe: true; opacity: 0.3"
+               visible="false">
+        </a-box>
+      </a-entity>
+
+      <!-- ZONE MARKERS with improved visibility -->
+      <a-sphere id="zone1-marker"
+        position="-2 1 -7"
+        radius="0.15"
+        material="color: orange; emissive: orange; emissiveIntensity: 0.5"
+        animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1000; loop: true">
       </a-sphere>
 
-      <!-- INFO PANEL -->
-      <a-entity id="infoPanel" position="0 2 -3">
-        <a-plane width="3" height="1.5" color="black" opacity="0.75" material="shader: flat"></a-plane>
-        <a-text value="Zone 2: 15% rockfall risk\nEscape time: 5 mins\nStatus: Moderate hazard"
-                color="white" wrap-count="36" align="center" position="0 0 0.05">
+      <a-sphere id="zone2-marker"
+        position="1 2 -6"
+        radius="0.15"
+        material="color: red; emissive: red; emissiveIntensity: 0.8"
+        animation="property: scale; to: 1.3 1.3 1.3; dir: alternate; dur: 800; loop: true">
+      </a-sphere>
+
+      <a-sphere id="zone3-marker"
+        position="0 0.5 -9"
+        radius="0.15"
+        material="color: green; emissive: green; emissiveIntensity: 0.5"
+        animation="property: scale; to: 1.1 1.1 1.1; dir: alternate; dur: 1200; loop: true">
+      </a-sphere>
+
+      <!-- IMPROVED INFO PANEL -->
+      <a-entity id="infoPanel" position="3 1.5 -5" rotation="0 -30 0">
+        <a-plane width="3.5" height="2" color="#000" opacity="0.8" 
+                 material="shader: flat"
+                 geometry="primitive: plane"
+                 position="0 0 0">
+        </a-plane>
+        <a-text value="MINE ZONE ANALYSIS\n━━━━━━━━━━━━━━━━━\nZone 1: Low risk (5%)\nZone 2: Moderate risk (15%)\nZone 3: High risk (25%)\n\nEscape routes active\nMonitoring: ONLINE"
+                color="#00ff00" 
+                font="kelsonsans"
+                wrap-count="25" 
+                align="center" 
+                position="0 0 0.01">
         </a-text>
       </a-entity>
 
-      <!-- CAMERA -->
-      <a-entity id="rig" position="0 1.6 0">
-        <a-camera></a-camera>
+      <!-- ENHANCED CAMERA with movement controls -->
+      <a-entity id="rig" 
+                position="0 1.6 0"
+                movement-controls="fly: false; constrainToNavMesh: false"
+                wasd-controls="acceleration: 20">
+        <a-camera look-controls="pointerLockEnabled: false" 
+                  wasd-controls-enabled="true"
+                  cursor="rayOrigin: mouse">
+          <!-- Crosshair -->
+          <a-ring position="0 0 -1" radius-inner="0.005" radius-outer="0.01" 
+                  material="color: white; opacity: 0.8"></a-ring>
+        </a-camera>
       </a-entity>
 
+      <!-- ENVIRONMENT ENHANCEMENTS -->
+      <a-sky color="#001122"></a-sky>
+      
+      <!-- Atmospheric particles -->
+      <a-entity id="particles" position="0 2 -8">
+        <a-sphere radius="0.02" material="color: white; opacity: 0.3" 
+                  animation="property: position; to: 0 4 0; dur: 3000; loop: true; dir: alternate"></a-sphere>
+        <a-sphere radius="0.015" material="color: #cccccc; opacity: 0.2" position="2 0 1"
+                  animation="property: position; to: 2 3 1; dur: 4000; loop: true; dir: alternate"></a-sphere>
+        <a-sphere radius="0.01" material="color: white; opacity: 0.4" position="-1.5 0 -2"
+                  animation="property: position; to: -1.5 3.5 -2; dur: 2500; loop: true; dir: alternate"></a-sphere>
+      </a-entity>
     </a-scene>
+
+    <script>
+      // Wait for scene to load
+      document.querySelector('a-scene').addEventListener('loaded', function () {
+        console.log('Scene loaded');
+      });
+
+      // Model alignment functions
+      function updateModel() {
+        const mine = document.querySelector('#mine');
+        const posX = parseFloat(document.getElementById('posX').value);
+        const posY = parseFloat(document.getElementById('posY').value);
+        const posZ = parseFloat(document.getElementById('posZ').value);
+        const rotX = parseFloat(document.getElementById('rotX').value);
+        const rotY = parseFloat(document.getElementById('rotY').value);
+        const rotZ = parseFloat(document.getElementById('rotZ').value);
+        
+        mine.setAttribute('position', `${posX} ${posY} ${posZ}`);
+        mine.setAttribute('rotation', `${rotX} ${rotY} ${rotZ}`);
+      }
+
+      function applyScale() {
+        const mine = document.querySelector('#mine');
+        const scale = parseFloat(document.getElementById('scale').value);
+        mine.setAttribute('scale', `${scale} ${scale} ${scale}`);
+      }
+
+      function resetView() {
+        document.getElementById('posX').value = 0;
+        document.getElementById('posY').value = -1;
+        document.getElementById('posZ').value = -8;
+        document.getElementById('rotX').value = 0;
+        document.getElementById('rotY').value = 0;
+        document.getElementById('rotZ').value = 0;
+        document.getElementById('scale').value = 4;
+        updateModel();
+        applyScale();
+      }
+
+      function toggleGrid() {
+        const grid = document.querySelector('#grid');
+        grid.setAttribute('visible', !grid.getAttribute('visible'));
+      }
+
+      function centerModel() {
+        // Auto-center the model based on typical GLB alignment issues
+        document.getElementById('posX').value = 0;
+        document.getElementById('posY').value = -0.5;
+        document.getElementById('posZ').value = -6;
+        document.getElementById('rotY').value = 180; // Often models face wrong way
+        updateModel();
+      }
+
+      let wireframeMode = false;
+      function toggleWireframe() {
+        const mine = document.querySelector('#mine');
+        wireframeMode = !wireframeMode;
+        
+        if (wireframeMode) {
+          mine.setAttribute('material', 'wireframe: true; opacity: 0.7');
+          document.querySelector('#boundingBox').setAttribute('visible', true);
+        } else {
+          mine.removeAttribute('material');
+          document.querySelector('#boundingBox').setAttribute('visible', false);
+        }
+      }
+
+      // Keyboard shortcuts
+      document.addEventListener('keydown', function(event) {
+        switch(event.key) {
+          case 'g':
+            toggleGrid();
+            break;
+          case 'r':
+            resetView();
+            break;
+          case 'c':
+            centerModel();
+            break;
+          case 'w':
+            toggleWireframe();
+            break;
+        }
+      });
+
+      // Model load event handler
+      document.querySelector('#mine').addEventListener('model-loaded', function() {
+        console.log('Mine model loaded successfully');
+        // You can add auto-alignment logic here once the model loads
+      });
+
+      document.querySelector('#mine').addEventListener('model-error', function(error) {
+        console.log('Error loading mine model:', error);
+        // Show fallback geometry
+        const mine = document.querySelector('#mine');
+        mine.innerHTML = '<a-box color="gray" width="2" height="1" depth="3"></a-box>';
+      });
+
+      // Auto-update on input change
+      ['posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateModel);
+      });
+
+      document.getElementById('scale').addEventListener('input', applyScale);
+    </script>
   </body>
 </html>
