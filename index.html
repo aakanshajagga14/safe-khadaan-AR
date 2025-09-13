@@ -184,12 +184,25 @@
           }
         });
 
+        // Add device info to overlay
+        const deviceInfo = document.getElementById('device-info');
+        if (deviceInfo) {
+          deviceInfo.textContent = `Device: ${isMobile() ? 'Mobile' : 'Desktop'}, VR Support: ${hasVRSupport()}`;
+        }
+
         // Error handling
         scene.addEventListener('componentremoved', function(evt) {
           if (evt.detail.name === 'gltf-model') {
             console.error('Model failed to load');
           }
         });
+
+        // Additional mobile debugging
+        if (isMobile()) {
+          console.log('User Agent:', navigator.userAgent);
+          console.log('Touch Points:', navigator.maxTouchPoints);
+          console.log('VR Support:', hasVRSupport());
+        }
       });
 
       // Utility functions for position adjustment
